@@ -1,0 +1,74 @@
+\documentclass[a4paper, 12pt]{report}
+
+%%%%%%%%%%%%
+% Packages %
+%%%%%%%%%%%%
+
+\usepackage[english]{babel}
+
+\usepackage{packages/sleek}
+\usepackage{packages/sleek-title}
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% Document information %
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+\logo{resources/pdf/logo-uliege.pdf}
+\institute{\textbf{University of Liège}}
+\faculty{Faculty of Applied Science}
+\department{\normalsize{Department of Electrical Engineering and Computer Science}}
+\title{Autonomous navigation of a UAV in an indoor environment}
+\subtitle{\textit{Graduation Studies conducted for obtaining the Master's degree in Computer Engineering}}
+\author{\textit{Author}\\Maxime \textsc{Meurisse}}
+\supervisor{\textit{Advisors}\\Pr. Pierre \textsc{Geurts}\\Mr. Christoffe \textsc{Greffe}}
+\date{Academic year 2020-2021}
+
+%%%%%%%%%%%%%%
+% References %
+%%%%%%%%%%%%%%
+
+\addbibresource{resources/bib/references.bib}
+
+%%%%%%%%%%%%
+% Document %
+%%%%%%%%%%%%
+
+\begin{document}
+    % ----- Title page ----- %
+    
+	\maketitle
+	
+	% ----- Abstract ----- %
+	
+	\input{content/others/abstract}
+	
+	% ----- Acknowledgements ----- %
+	
+	\input{content/others/acknowledgements}
+	
+	% ----- Lists ----- %
+	
+	\tableofcontents
+	
+	% ----- Content ----- %
+	
+	\input{content/chapters/01}
+	\input{content/chapters/02}
+	\input{content/chapters/03}
+	\input{content/chapters/04}
+	\input{content/chapters/05}
+	\input{content/chapters/06}
+	\input{content/chapters/07}
+	\input{content/chapters/08}
+	
+	% ----- Appendix ----- %
+	
+	\appendix
+	
+	\input{content/appendix/A}
+	
+	% ----- References ----- %
+	
+	\nocite{*}
+	\printbibliography
+\end{document}

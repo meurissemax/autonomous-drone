@@ -1,0 +1,117 @@
+\ProvidesPackage{sleek-theorems}[2020/11/05 v1.01 Sleek Theorems]
+
+%%%%%%%%%%%%%%%%
+% Requirements %
+%%%%%%%%%%%%%%%%
+
+\RequirePackage{amsthm}
+\RequirePackage{thmtools}
+\RequirePackage[framemethod=TikZ]{mdframed}
+
+%%%%%%%%%%%%
+% Settings %
+%%%%%%%%%%%%
+
+% Setup
+
+\define@key{thmdef}{mdthm}[{}]{
+    \thmt@trytwice{\def\thmt@theoremdefiner{\mdtheorem[#1]}}{}
+}
+
+% QED symbol
+
+\renewcommand{\qedsymbol}{$\blacksquare$} % filled \qed
+
+% Languages
+
+\def\lgtheorem{Theorem}
+\def\lgproof{Proof}
+\def\lglemma{Lemma}
+\def\lgproposition{Proposition}
+\def\lgdefinition{Definition}
+\def\lghypothesis{Hypothesis}
+\def\lgmethod{Method}
+\def\lgquestion{Question}
+\def\lganswer{Answer}
+\def\lgexample{Example}
+\def\lgremark{Remark}
+\def\lgnote{Note}
+\def\lgtip{Tip}
+
+\DeclareOption{french}{
+    \def\lgtheorem{Théorème}
+    \def\lgproof{Preuve}
+    \def\lglemma{Lemme}
+    \def\lgproposition{Proposition}
+    \def\lgdefinition{Définition}
+    \def\lghypothesis{Hypothèse}
+    \def\lgmethod{Méthode}
+    \def\lgquestion{Question}
+    \def\lganswer{Réponse}
+    \def\lgexample{Exemple}
+    \def\lgremark{Remarque}
+    \def\lgnote{Note}
+    \def\lgtip{Conseil}
+}
+
+%%%%%%%%%%%%%%%%
+% Environments %
+%%%%%%%%%%%%%%%%
+
+% Environments
+
+\theoremstyle{plain}
+\newtheorem{theorem}{\lgtheorem}
+\newtheorem{lemma}[theorem]{\lglemma}
+\newtheorem{proposition}[theorem]{\lgproposition}
+
+\theoremstyle{definition}
+\newtheorem{definition}{\lgdefinition}
+\newtheorem{hypothesis}{\lghypothesis}
+\newtheorem{method}{\lgmethod}
+\newtheorem{question}{\lgquestion}
+
+\let\proof\relax % overwrite proof environment
+\let\endproof\relax
+
+\theoremstyle{remark}
+\newtheorem{proof}{\lgproof}[theorem]
+\newtheorem{answer}{\lganswer}[question]
+\newtheorem{example}{\lgexample}
+\newtheorem*{remark}{\lgremark}
+\newtheorem*{note}{\lgnote}
+\newtheorem*{tip}{\lgtip}
+
+% Framed environments
+
+\mdfdefinestyle{thicc}{
+    nobreak=true,
+    skipabove=\topskip,
+    skipbelow=\topskip,
+    innerleftmargin=0.5em,
+    innerrightmargin=0.5em,
+    innerbottommargin=0.5em,
+    innertopmargin=0.5em,
+    linewidth=0.25em,
+    roundcorner=0.15em,
+    linecolor=black!10,
+    frametitlebackgroundcolor=black!10,
+    theoremseparator={.}
+}
+
+\declaretheorem[mdthm={style=thicc, linecolor=red!20, frametitlebackgroundcolor=red!20}, sibling=theorem, name=\lgtheorem]{fmd-theorem}
+\declaretheorem[mdthm={style=thicc, linecolor=red!20, frametitlebackgroundcolor=red!20}, sibling=lemma, name=\lglemma]{fmd-lemma}
+\declaretheorem[mdthm={style=thicc, linecolor=blue!20, frametitlebackgroundcolor=blue!20}, sibling=proposition, name=\lgproposition]{fmd-proposition}
+\declaretheorem[mdthm={style=thicc, nobreak=false}, sibling=proof, name=\lgproof]{fmd-proof}
+
+\declaretheorem[mdthm={style=thicc, linecolor=black!20!green!20, frametitlebackgroundcolor=black!20!green!20}, sibling=definition, name=\lgdefinition]{fmd-definition}
+\declaretheorem[mdthm={style=thicc, linecolor=blue!20, frametitlebackgroundcolor=blue!20}, sibling=hypothesis, name=\lghypothesis]{fmd-hypothesis}
+\declaretheorem[mdthm={style=thicc, nobreak=false}, name=\lgmethod]{fmd-method}
+\declaretheorem[mdthm={style=thicc, linecolor=orange!20, frametitlebackgroundcolor=orange!20}, sibling=question, name=\lgquestion]{fmd-question}
+
+\declaretheorem[mdthm={style=thicc, nobreak=false}, sibling=answer, name=\lganswer]{fmd-answer}
+\declaretheorem[mdthm={style=thicc, nobreak=false}, sibling=example, name=\lgexample]{fmd-example}
+
+\ProcessOptions\relax
+
+\endinput
