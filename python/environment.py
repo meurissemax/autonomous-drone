@@ -10,6 +10,7 @@ and interact with it.
 ###########
 
 import math
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -21,6 +22,14 @@ from astar import AStar
 ############
 
 plt.rcParams['toolbar'] = 'None'
+plt.rcParams['font.size'] = 10
+plt.rcParams['figure.autolayout'] = True
+plt.rcParams['savefig.transparent'] = True
+
+if mpl.checkdep_usetex(True):
+    plt.rcParams['font.family'] = ['serif']
+    plt.rcParams['font.serif'] = ['Computer Modern']
+    plt.rcParams['text.usetex'] = True
 
 
 ###########
@@ -100,6 +109,12 @@ class Environment:
         # Agent
         self.pos, self.omega = np.array(pos), omega
 
+        # Objective
+        self.obj = np.array(obj)
+
+        # Path finder
+        self.path_finder = PathFinding(self.grid)
+
         # Transition matrices
         self.t_move = {
             'forward': {'N': [-1, 0], 'S': [1, 0], 'W': [0, -1], 'E': [0, 1]},
@@ -114,12 +129,6 @@ class Environment:
             'right': {'N': 'right', 'S': 'left', 'W': 'right', 'E': 'forward'}
         }
 
-        # Objective
-        self.obj = np.array(obj)
-
-        # Path finder
-        self.path_finder = PathFinding(self.grid)
-
         # Plot
         self.xticks = np.arange(0, self.m, 1)
         self.yticks = np.arange(0, self.n, 1)
@@ -130,9 +139,6 @@ class Environment:
             'W': '<',
             'E': '>'
         }
-
-    def has_reached_obj(self):
-        return (self.pos == self.obj).all()
 
     def _next(self, pos, omega, d):
         transition = self.t_move.get(d).get(omega)
@@ -151,28 +157,6 @@ class Environment:
     def move(self, d, times=1):
         for _ in range(times):
             self.pos, self.omega = self._next(self.pos, self.omega, d)
-
-    def update(self, pos=None, omega=None, obj=None):
-        def accept(i, j):
-            return 0 <= i < self.n and 0 <= j < self.m and self.grid[i, j] == 0
-
-        # Position
-        if pos is not None:
-            i, j = pos
-
-            if accept(i, j):
-                self.pos = np.array(pos)
-
-        # Orientation
-        if omega is not None and omega in ['N', 'S', 'W', 'E']:
-            self.omega = omega
-
-        # Objective
-        if obj is not None:
-            i, j = obj
-
-            if accept(i, j):
-                self.obj = np.array(obj)
 
     def path(self, start=None, end=None):
         a = start if start is not None else tuple(self.pos)
@@ -252,31 +236,34 @@ class Environment:
 
         return grouped
 
-    def show(self, pos=False, obj=False, points=None):
+    def has_reached_obj(self):
+        return (self.pos == self.obj).all()
+
+    def render(self, draw=True, export=None, path=None, what=[]):
         # Grid
-        plt.figure('Environment')
+        plt.figure('Environment', figsize=(8, 6))
         plt.clf()
         plt.imshow(self.grid, cmap='Greys')
 
         plt.xticks(self.xticks)
         plt.yticks(self.yticks)
 
-        # Points (if any)
-        if points is not None:
-            points = np.array(points)
-            i, j = points[:, 1], points[:, 0]
+        # Path
+        if path is not None:
+            path = np.array(path)
+            i, j = path[:, 1], path[:, 0]
 
             plt.scatter(i, j, c='blue')
 
         # Agent position
-        if pos:
+        if 'pos' in what:
             i, j = self.pos[1], self.pos[0]
             marker = self.markers.get(self.omega)
 
             plt.scatter(i, j, c='red', marker=marker)
 
         # Objective
-        if obj:
+        if 'obj' in what:
             i, j = self.obj[1], self.obj[0]
 
             plt.scatter(i, j, c='yellow', marker='*')
@@ -286,9 +273,14 @@ class Environment:
         ax.set_aspect('equal')
         ax.xaxis.tick_top()
 
-        # Show
-        plt.draw()
-        plt.pause(0.5)
+        # Export
+        if export is not None:
+            plt.savefig(export)
+
+        # Draw
+        if draw:
+            plt.draw()
+            plt.pause(0.5)
 
     def keep(self):
         plt.show()
@@ -323,7 +315,7 @@ def main(
     print(f'Has reached objective ? {env.has_reached_obj()}')
 
     # Show the environment
-    env.show(pos=True, obj=True, points=path)
+    env.render(path=path, what=['pos', 'obj'])
     env.keep()
 
 

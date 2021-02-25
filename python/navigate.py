@@ -85,7 +85,7 @@ class Naive(Navigation):
 
         # Show the environment
         if self.show:
-            self.env.show(pos=True, obj=True, points=path)
+            self.env.render(path=path, what=['pos', 'obj'])
 
         # Initialize the drone
         self.controller.arm()
@@ -98,7 +98,7 @@ class Naive(Navigation):
 
             # Show updated environment
             if self.show:
-                self.env.show(pos=True, obj=True, points=path)
+                self.env.render(path=path, what=['pos', 'obj'])
 
         # Stop the drone
         self.controller.land()
@@ -145,7 +145,7 @@ class Vision(Navigation):
     def navigate(self):
         # Show the environment
         if self.show:
-            self.env.show(pos=True, obj=True)
+            self.env.render(what=['pos', 'obj'])
 
         # Initialize the drone
         self.controller.arm()
@@ -174,7 +174,7 @@ class Vision(Navigation):
 
             # Show updated environment
             if self.show:
-                self.env.show(pos=True, obj=True)
+                self.env.render(what=['pos', 'obj'])
 
         # Stop the drone
         self.controller.land()
@@ -248,7 +248,7 @@ class Vanishing(Navigation):
 
         # Show the environment
         if self.show:
-            self.env.show(pos=True, obj=True, points=path)
+            self.env.render(path=path, what=['pos', 'obj'])
 
         # Initialize the drone
         self.controller.arm()
@@ -271,7 +271,7 @@ class Vanishing(Navigation):
 
             # Show updated environment
             if self.show:
-                self.env.show(pos=True, obj=True, points=path)
+                self.env.render(path=path, what=['pos', 'obj'])
 
         # Stop the drone
         self.controller.land()

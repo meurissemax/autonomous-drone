@@ -27,7 +27,7 @@ def explore(env, controller, show):
 
     # Show the path
     if show:
-        env.show(obj=True, points=path)
+        env.render(path=path, what=['pos', 'obj'])
 
     # Initialize the drone
     controller.arm()
