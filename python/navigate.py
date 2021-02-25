@@ -14,6 +14,8 @@ import torchvision.transforms as transforms
 from abc import ABC, abstractmethod
 from functools import partial
 
+from analyze import vanishing_point
+
 from controllers import (
     AirSimDrone,
     AirSimDroneNoisy,
@@ -183,6 +185,103 @@ class Vision(Navigation):
             self.env.keep()
 
 
+class Vanishing(Navigation):
+    """
+    Navigation algorithm based on the vanishing point
+    detection.
+    """
+
+    def __init__(self, env, controller, show=False):
+        super().__init__(env, controller, show)
+
+        # List of actions
+        self.actions = {
+            'forward': partial(self.controller.move, 'forward', 100, 50),
+            'left': partial(self.controller.rotate, 'ccw', 90),
+            'right': partial(self.controller.rotate, 'cw', 90)
+        }
+
+        # List of turn actions
+        self.turn_actions = ['left', 'right']
+
+        # List of adjustments
+        self.adjustments = {
+            'left': partial(self.controller.rotate, 'cw', 5),
+            'right': partial(self.controller.rotate, 'ccw', 5)
+        }
+
+    def _alignment(self, lower, upper):
+        # Take a picture
+        img = self.controller.picture()
+
+        # Get vanishing point
+        x, _ = vanishing_point(img)
+
+        # Check alignment
+        if upper[0] < x < upper[1]:
+            return 'left'
+        elif lower[0] < x < lower[1]:
+            return 'right'
+
+        return 'center'
+
+    def _adjust(self, mean, std):
+        # Get lower and upper intervals
+        lower = (mean - 2 * std, mean - std)
+        upper = (mean + std, mean + 2 * std)
+
+        # Get drone alignment
+        alignment = self._alignment(lower, upper)
+
+        # Adjust the drone
+        while alignment != 'center':
+            self.adjustments.get(alignment)()
+
+            alignment = self._alignment(lower, upper)
+
+    def navigate(self):
+        # Determine shortest path to objective
+        path = self.env.path()
+
+        # Get list of actions to follow the path
+        actions = self.env.sequence(path)
+
+        # Show the environment
+        if self.show:
+            self.env.show(pos=True, obj=True, points=path)
+
+        # Initialize the drone
+        self.controller.arm()
+        self.controller.takeoff()
+
+        # Get image dimensions
+        img = self.controller.picture()
+        h, w, _ = img.shape
+
+        # Define bound parameters
+        mean, std = w / 2, w / 20
+
+        # Execute each action
+        for action in actions:
+            if action not in self.turn_actions:
+                self._adjust(mean, std)
+
+            self.actions.get(action)()
+            self.env.move(action)
+
+            # Show updated environment
+            if self.show:
+                self.env.show(pos=True, obj=True, points=path)
+
+        # Stop the drone
+        self.controller.land()
+        self.controller.disarm()
+
+        # Keep environment open
+        if self.show:
+            self.env.keep()
+
+
 ########
 # Main #
 ########
@@ -208,7 +307,8 @@ def main(
     # Algorithm
     algorithms = {
         'naive': Naive,
-        'vision': Vision
+        'vision': Vision,
+        'vanishing': Vanishing
     }
 
     algorithm = algorithms.get(algorithm_id)
@@ -225,7 +325,7 @@ if __name__ == '__main__':
 
     parser.add_argument('-e', '--environment', type=str, default='indoor-corridor.txt', help='path to environment file')
     parser.add_argument('-c', '--controller', type=str, default='airsim', choices=['airsim', 'noisy', 'telloedu'], help='choice of the controller to use')
-    parser.add_argument('-a', '--algorithm', type=str, default='naive', choices=['naive', 'vision'], help='navigation algorithm to use')
+    parser.add_argument('-a', '--algorithm', type=str, default='naive', choices=['naive', 'vision', 'vanishing'], help='navigation algorithm to use')
     parser.add_argument('-s', '--show', action='store_true', default=False, help='show the environment representation')
 
     args = parser.parse_args()
