@@ -2,6 +2,9 @@
 Implementation of controllers for simulated drone (AirSim)
 and real drone (DJI Tello EDU).
 
+The simulated drone is implemented twice: a normal and a
+noisy version.
+
 Controllers have been implemented to work with the exact same
 interface in order to be interchangeable in their use.
 """
@@ -102,6 +105,9 @@ class AirSimDrone(Controller):
     """
     Implementation of the controller used for the simulated
     drone in AirSim.
+
+    This version uses the functions of AirSim API without
+    any noise.
     """
 
     def __init__(self):
@@ -234,6 +240,34 @@ class AirSimDrone(Controller):
 
     def gps(self):
         return self.client.getGpsData()
+
+
+class AirSimDroneNoisy(AirSimDrone):
+    """
+    Implementation of the controller used for the simulated
+    drone in AirSim.
+
+    This version uses the functions of AirSim API with
+    additional noise on movement to simulate the real
+    drone behaviour.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def _noise(self, value):
+        mean = value / 10
+        std = value / 50
+
+        noise = np.random.normal(mean, std)
+
+        return value + noise
+
+    def move(self, direction, distance, speed):
+        super().move(direction, self._noise(distance), speed)
+
+    def rotate(self, direction, angle):
+        super().rotate(direction, self._noise(angle))
 
 
 class TelloEDU(Controller):

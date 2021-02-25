@@ -8,7 +8,12 @@ Implementation of the exploration process of the drone.
 # Imports #
 ###########
 
-from controllers import AirSimDrone, TelloEDU
+from controllers import (
+    AirSimDrone,
+    AirSimDroneNoisy,
+    TelloEDU
+)
+
 from environment import Environment
 
 
@@ -55,6 +60,7 @@ def main(
     # Controller
     controllers = {
         'airsim': AirSimDrone,
+        'noisy': AirSimDroneNoisy,
         'telloedu': TelloEDU
     }
 
@@ -70,7 +76,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Exploration process of the drone.')
 
     parser.add_argument('-e', '--environment', type=str, default='indoor-corridor.txt', help='path to environment file')
-    parser.add_argument('-c', '--controller', type=str, default='airsim', choices=['airsim', 'telloedu'], help='choice of the controller to use')
+    parser.add_argument('-c', '--controller', type=str, default='airsim', choices=['airsim', 'noisy', 'telloedu'], help='choice of the controller to use')
     parser.add_argument('-s', '--show', action='store_true', default=False, help='show the environment representation')
 
     args = parser.parse_args()
