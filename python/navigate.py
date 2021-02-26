@@ -70,7 +70,7 @@ class Naive(Navigation):
 
         # List of actions
         self.actions = {
-            'forward': lambda t: self.controller.move('forward', 100 * t, 50),
+            'forward': lambda t: self.controller.move('forward', 100 * t),
             'left': lambda t: self.controller.rotate('ccw', 90 * t),
             'right': lambda t: self.controller.rotate('cw', 90 * t)
         }
@@ -137,7 +137,7 @@ class Vision(Navigation):
 
         # Actions
         self.actions = {
-            'forward': partial(self.controller.move, 'forward', 100, 50),
+            'forward': partial(self.controller.move, 'forward', 100),
             'left': partial(self.controller.rotate, 'ccw', 90),
             'right': partial(self.controller.rotate, 'cw', 90)
         }
@@ -196,7 +196,7 @@ class Vanishing(Navigation):
 
         # List of actions
         self.actions = {
-            'forward': partial(self.controller.move, 'forward', 100, 50),
+            'forward': partial(self.controller.move, 'forward', 100),
             'left': partial(self.controller.rotate, 'ccw', 90),
             'right': partial(self.controller.rotate, 'cw', 90)
         }

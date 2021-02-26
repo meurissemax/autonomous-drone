@@ -60,7 +60,7 @@ class Controller(ABC):
         pass
 
     @abstractmethod
-    def move(self, direction: str, distance: int, speed: int):
+    def move(self, direction: str, distance: int, speed: int = 50):
         pass
 
     @abstractmethod
@@ -82,17 +82,17 @@ class Controller(ABC):
     def manual(self):
         while True:
             if keyboard.is_pressed('up'):
-                self.move('up', 20, 50)
+                self.move('up', 20)
             elif keyboard.is_pressed('down'):
-                self.move('down', 20, 50)
+                self.move('down', 20)
             elif keyboard.is_pressed('left'):
-                self.move('left', 20, 50)
+                self.move('left', 20)
             elif keyboard.is_pressed('right'):
-                self.move('right', 20, 50)
+                self.move('right', 20)
             elif keyboard.is_pressed('z'):
-                self.move('forward', 20, 50)
+                self.move('forward', 20)
             elif keyboard.is_pressed('s'):
-                self.move('back', 20, 50)
+                self.move('back', 20)
             elif keyboard.is_pressed('q'):
                 self.rotate('ccw', 5)
             elif keyboard.is_pressed('d'):
@@ -140,7 +140,7 @@ class AirSimDrone(Controller):
         if landed != airsim.LandedState.Landed:
             self.client.landAsync().join()
 
-    def move(self, direction, distance, speed):
+    def move(self, direction, distance, speed=50):
         error = False
 
         if speed < 10 or speed > 100:
@@ -263,7 +263,7 @@ class AirSimDroneNoisy(AirSimDrone):
 
         return value + noise
 
-    def move(self, direction, distance, speed):
+    def move(self, direction, distance, speed=50):
         super().move(direction, self._noise(distance), speed)
 
     def rotate(self, direction, angle):
@@ -333,7 +333,7 @@ class TelloEDU(Controller):
     def land(self):
         self._send_command('land')
 
-    def move(self, direction, distance, speed):
+    def move(self, direction, distance, speed=50):
         error = False
 
         if speed < 10 or speed > 100:
