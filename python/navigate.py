@@ -124,11 +124,13 @@ class Vision(Navigation):
         super().__init__(env, controller, show)
 
         # Device
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         torch.backends.cudnn.enabled = True
         torch.backends.cudnn.benchmark = True
 
-        print(f'Device: {self.device}')
+        self.device = device
+
+        print(f'Device: {device}')
 
         # Choices
         self.choices = CHOICES
@@ -136,7 +138,7 @@ class Vision(Navigation):
         # Model
         model = MODEL(3, len(self.choices))
         model = model.to(self.device)
-        model.load_state_dict(torch.load(WEIGHTS_PTH, map_location=self.device))
+        model.load_state_dict(torch.load(WEIGHTS_PTH, map_location=device))
         model.eval()
 
         self.model = model
@@ -327,12 +329,43 @@ def main(
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='Navigation process of the drone.')
+    parser = argparse.ArgumentParser(
+        description='Navigation process of the drone.'
+    )
 
-    parser.add_argument('-e', '--environment', type=str, default='indoor-corridor.txt', help='path to environment file')
-    parser.add_argument('-c', '--controller', type=str, default='airsim', choices=['airsim', 'noisy', 'telloedu'], help='choice of the controller to use')
-    parser.add_argument('-a', '--algorithm', type=str, default='naive', choices=['naive', 'vision', 'vanishing'], help='navigation algorithm to use')
-    parser.add_argument('-s', '--show', action='store_true', default=False, help='show the environment representation')
+    parser.add_argument(
+        '-e',
+        '--environment',
+        type=str,
+        default='indoor-corridor.txt',
+        help='path to environment file'
+    )
+
+    parser.add_argument(
+        '-c',
+        '--controller',
+        type=str,
+        default='airsim',
+        choices=['airsim', 'noisy', 'telloedu'],
+        help='choice of the controller to use'
+    )
+
+    parser.add_argument(
+        '-a',
+        '--algorithm',
+        type=str,
+        default='naive',
+        choices=['naive', 'vision', 'vanishing'],
+        help='navigation algorithm to use'
+    )
+
+    parser.add_argument(
+        '-s',
+        '--show',
+        action='store_true',
+        default=False,
+        help='show the environment representation'
+    )
 
     args = parser.parse_args()
 

@@ -147,23 +147,85 @@ def main(
 
         # Save weights
         if epoch == epochs[-1]:
-            model_name = os.path.join(folder_pth, f'{model.__class__.__name__.lower()}.pth')
+            model_name = os.path.join(
+                folder_pth,
+                f'{model.__class__.__name__.lower()}.pth'
+            )
             torch.save(model.state_dict(), model_name)
 
 
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='Train a deep learning model.')
+    parser = argparse.ArgumentParser(
+        description='Train a deep learning model.'
+    )
 
-    parser.add_argument('-o', '--outputs', type=str, default='outputs/', help='path to outputs folder')
-    parser.add_argument('-c', '--criterion', type=str, default='mse', choices=['mse'], help='criterion to use')
-    parser.add_argument('-t', '--train', type=str, default='train.json', help='path to JSON file with training data')
-    parser.add_argument('-a', '--augment', default=False, action='store_true', help='flag to enable data augmentation')
-    parser.add_argument('-b', '--batch', type=int, default=32, help='batch size')
-    parser.add_argument('-w', '--workers', type=int, default=0, help='number of workers')
-    parser.add_argument('-m', '--model', type=str, default='densenet161', choices=['densenet161'], help='model to train')
-    parser.add_argument('-e', '--epochs', type=int, default=20, help='number of epochs')
+    parser.add_argument(
+        '-o',
+        '--outputs',
+        type=str,
+        default='outputs/',
+        help='path to outputs folder'
+    )
+
+    parser.add_argument(
+        '-c',
+        '--criterion',
+        type=str,
+        default='mse',
+        choices=['mse'],
+        help='criterion to use'
+    )
+
+    parser.add_argument(
+        '-t',
+        '--train',
+        type=str,
+        default='train.json',
+        help='path to JSON file with training data'
+    )
+
+    parser.add_argument(
+        '-a',
+        '--augment',
+        default=False,
+        action='store_true',
+        help='flag to enable data augmentation'
+    )
+
+    parser.add_argument(
+        '-b',
+        '--batch',
+        type=int,
+        default=32,
+        help='batch size'
+    )
+
+    parser.add_argument(
+        '-w',
+        '--workers',
+        type=int,
+        default=0,
+        help='number of workers'
+    )
+
+    parser.add_argument(
+        '-m',
+        '--model',
+        type=str,
+        default='densenet161',
+        choices=['densenet161'],
+        help='model to train'
+    )
+
+    parser.add_argument(
+        '-e',
+        '--epochs',
+        type=int,
+        default=20,
+        help='number of epochs'
+    )
 
     args = parser.parse_args()
 

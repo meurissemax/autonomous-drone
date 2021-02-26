@@ -66,10 +66,12 @@ class PathFinding(AStar):
         left = (i, j - 1)
         right = (i, j + 1)
 
+        neighbors = [up, down, left, right]
+
         def accept(i, j):
             return 0 <= i < self.n and 0 <= j < self.m and self.grid[i, j] == 0
 
-        return [(ni, nj) for ni, nj in [up, down, left, right] if accept(ni, nj)]
+        return [(ni, nj) for ni, nj in neighbors if accept(ni, nj)]
 
     def distance_between(self, n1, n2):
         return 1
@@ -349,9 +351,17 @@ def main(
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='Environment representation.')
+    parser = argparse.ArgumentParser(
+        description='Environment representation.'
+    )
 
-    parser.add_argument('-e', '--environment', type=str, default='indoor-corridor.txt', help='path to environment file')
+    parser.add_argument(
+        '-e',
+        '--environment',
+        type=str,
+        default='indoor-corridor.txt',
+        help='path to environment file'
+    )
 
     args = parser.parse_args()
 

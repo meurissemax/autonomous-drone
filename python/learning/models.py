@@ -63,7 +63,11 @@ class DenseNet161(nn.Module):
         super().__init__()
 
         # Pre trained original DenseNet161
-        self.densenet161 = torch.hub.load('pytorch/vision:v0.6.0', 'densenet161', pretrained=True)
+        self.densenet161 = torch.hub.load(
+            'pytorch/vision:v0.6.0',
+            'densenet161',
+            pretrained=True
+        )
 
         # Remove last layer
         self.densenet161 = nn.Sequential(*list(self.densenet161.features))

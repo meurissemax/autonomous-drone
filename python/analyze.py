@@ -241,10 +241,25 @@ def main(
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='Analysis of an image.')
+    parser = argparse.ArgumentParser(
+        description='Analysis of an image.'
+    )
 
-    parser.add_argument('-i', '--image', type=str, default='image.png', help='path to the image file')
-    parser.add_argument('-e', '--export', type=str, default='analysis/', help='path to the folder for exported results')
+    parser.add_argument(
+        '-i',
+        '--image',
+        type=str,
+        default='image.png',
+        help='path to the image file'
+    )
+
+    parser.add_argument(
+        '-e',
+        '--export',
+        type=str,
+        default='analysis/',
+        help='path to the folder for exported results'
+    )
 
     args = parser.parse_args()
 

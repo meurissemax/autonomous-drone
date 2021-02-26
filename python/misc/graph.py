@@ -114,12 +114,41 @@ def main(
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='Generate graph from a CSV file.')
+    parser = argparse.ArgumentParser(
+        description='Generate graph from a CSV file.'
+    )
 
-    parser.add_argument('-c', '--csv', type=str, default='data.csv', help='path to CSV file')
-    parser.add_argument('-x', '--xlabel', type=str, default='Epoch', help='label of the X-axis')
-    parser.add_argument('-y', '--ylabel', type=str, default='Loss', help='label of the Y-axis')
-    parser.add_argument('-f', '--file', type=str, default='graph.pdf', help='path to output file')
+    parser.add_argument(
+        '-c',
+        '--csv',
+        type=str,
+        default='data.csv',
+        help='path to CSV file'
+    )
+
+    parser.add_argument(
+        '-x',
+        '--xlabel',
+        type=str,
+        default='Epoch',
+        help='label of the X-axis'
+    )
+
+    parser.add_argument(
+        '-y',
+        '--ylabel',
+        type=str,
+        default='Loss',
+        help='label of the Y-axis'
+    )
+
+    parser.add_argument(
+        '-f',
+        '--file',
+        type=str,
+        default='graph.pdf',
+        help='path to output file'
+    )
 
     args = parser.parse_args()
 

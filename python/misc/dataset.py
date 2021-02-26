@@ -181,12 +181,41 @@ def main(
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='Data set generation tools.')
+    parser = argparse.ArgumentParser(
+        description='Data set generation tools.'
+    )
 
-    parser.add_argument('-i', '--images', type=str, default='images/', help='path to images of the data set')
-    parser.add_argument('-p', '--prefix', type=str, default='', help='prefix to add before each image name')
-    parser.add_argument('-r', '--ratio', type=float, default=0.7, help='ratio of the training set')
-    parser.add_argument('-j', '--json', type=str, default='dataset/', help='path to export JSON files')
+    parser.add_argument(
+        '-i',
+        '--images',
+        type=str,
+        default='images/',
+        help='path to images of the data set'
+    )
+
+    parser.add_argument(
+        '-p',
+        '--prefix',
+        type=str,
+        default='',
+        help='prefix to add before each image name'
+    )
+
+    parser.add_argument(
+        '-r',
+        '--ratio',
+        type=float,
+        default=0.7,
+        help='ratio of the training set'
+    )
+
+    parser.add_argument(
+        '-j',
+        '--json',
+        type=str,
+        default='dataset/',
+        help='path to export JSON files'
+    )
 
     args = parser.parse_args()
 

@@ -57,7 +57,10 @@ class IndoorDataset(Dataset):
         processes = {
             'densetnet161': [
                 transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]
+                )
             ]
         }
 
@@ -71,7 +74,11 @@ class IndoorDataset(Dataset):
                 lambda x: x.filter(ImageFilter.BLUR),
                 lambda x: x.filter(ImageFilter.EDGE_ENHANCE),
                 lambda x: x.filter(ImageFilter.SMOOTH),
-                transforms.ColorJitter(brightness=0.25, contrast=(0.2, 0.6), saturation=(0.2, 0.6))
+                transforms.ColorJitter(
+                    brightness=0.25,
+                    contrast=(0.2, 0.6),
+                    saturation=(0.2, 0.6)
+                )
             ])
         else:
             self.augment = None

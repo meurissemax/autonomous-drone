@@ -35,7 +35,8 @@ Tensors = Iterable[torch.Tensor]
 #############
 
 def pr_eval(outputs: Tensors, targets: Tensors) -> list:
-    adapt = lambda t: torch.flatten(torch.argmax(t, dim=1))
+    def adapt(t: Tensors):
+        return torch.flatten(torch.argmax(t, dim=1))
 
     outputs = adapt(outputs)
     targets = adapt(targets)
@@ -141,15 +142,67 @@ def main(
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='Evaluate a deep learning model.')
+    parser = argparse.ArgumentParser(
+        description='Evaluate a deep learning model.'
+    )
 
-    parser.add_argument('-o', '--outputs', type=str, default='outputs/', help='path to outputs folder')
-    parser.add_argument('-t', '--test', type=str, default='test.json', help='path to JSON file with testing data')
-    parser.add_argument('-b', '--batch', type=int, default=32, help='batch size')
-    parser.add_argument('-w', '--workers', type=int, default=0, help='number of workers')
-    parser.add_argument('-m', '--model', type=str, default='densenet161', choices=['densenet161'], help='model to evaluate')
-    parser.add_argument('-e', '--weights', type=str, default='weights.pth', help='path to weights file')
-    parser.add_argument('-r', '--metric', type=str, default='pr', choices=['pr'], help='metric to use')
+    parser.add_argument(
+        '-o',
+        '--outputs',
+        type=str,
+        default='outputs/',
+        help='path to outputs folder'
+    )
+
+    parser.add_argument(
+        '-t',
+        '--test',
+        type=str,
+        default='test.json',
+        help='path to JSON file with testing data'
+    )
+
+    parser.add_argument(
+        '-b',
+        '--batch',
+        type=int,
+        default=32,
+        help='batch size'
+    )
+
+    parser.add_argument(
+        '-w',
+        '--workers',
+        type=int,
+        default=0,
+        help='number of workers'
+    )
+
+    parser.add_argument(
+        '-m',
+        '--model',
+        type=str,
+        default='densenet161',
+        choices=['densenet161'],
+        help='model to evaluate'
+    )
+
+    parser.add_argument(
+        '-e',
+        '--weights',
+        type=str,
+        default='weights.pth',
+        help='path to weights file'
+    )
+
+    parser.add_argument(
+        '-r',
+        '--metric',
+        type=str,
+        default='pr',
+        choices=['pr'],
+        help='metric to use'
+    )
 
     args = parser.parse_args()
 
