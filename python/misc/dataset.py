@@ -2,8 +2,8 @@
 
 """
 Implementation of tools used to generate a data set
-(annotate images, augment data and split intro training
-and testing sets).
+(annotate images and split intro training and testing
+sets).
 """
 
 ###########
@@ -104,10 +104,6 @@ def annotate(imgs_pth, prefix):
     return annotations
 
 
-def augment():
-    pass
-
-
 def split(annotations, ratio):
     n = len(annotations)
 
@@ -139,16 +135,11 @@ def export(dataset, json_pth, fname):
 def main(
     imgs_pth='images/',
     prefix='',
-    augment=False,
     ratio=0.7,
     json_pth='dataset/'
 ):
     # Get annotations
     annotations = annotate(imgs_pth, prefix)
-
-    # Augment data
-    if augment:
-        pass
 
     # Split data set
     train, test = split(annotations, ratio)
@@ -165,7 +156,6 @@ if __name__ == '__main__':
 
     parser.add_argument('-i', '--images', type=str, default='images/', help='path to images of the data set')
     parser.add_argument('-p', '--prefix', type=str, default='', help='prefix to add before each image name')
-    parser.add_argument('-a', '--augment', action='store_true', default=False, help='augment or not the data set')
     parser.add_argument('-r', '--ratio', type=float, default=0.7, help='ratio of the training set')
     parser.add_argument('-j', '--json', type=str, default='dataset/', help='path to export JSON files')
 
@@ -174,7 +164,6 @@ if __name__ == '__main__':
     main(
         imgs_pth=args.images,
         prefix=args.prefix,
-        augment=args.augment,
         ratio=args.ratio,
         json_pth=args.json
     )
