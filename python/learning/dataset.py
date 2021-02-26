@@ -41,19 +41,21 @@ class IndoorDataset(Dataset):
     target whose format is the target tensor used by PyTorch.
     """
 
-    def __init__(self, json_pth, modelname, augment=False, dtype=torch.float):
+    def __init__(self, json_pth, modelname='', augment=False, dtype=torch.float):
         super().__init__()
 
         self.data = []
 
         # Process
-        if modelname == 'densetnet161':
-            self.process = transforms.Compose([
+        processes = {
+            'densetnet161': [
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-            ])
-        else:
-            self.process = transforms.ToTensor()
+            ]
+        }
+
+        self.process = processes.get(modelname, [transforms.ToTensor()])
+        self.process = transforms.Compose(self.process)
 
         # Data augmentation
         if augment:
