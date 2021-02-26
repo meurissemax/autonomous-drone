@@ -15,6 +15,7 @@ import torchvision.transforms as transforms
 from PIL import Image, ImageFilter
 from torch.utils.data import Dataset
 from tqdm import tqdm
+from typing import Tuple
 
 
 ###########
@@ -41,7 +42,13 @@ class IndoorDataset(Dataset):
     target whose format is the target tensor used by PyTorch.
     """
 
-    def __init__(self, json_pth, modelname='', augment=False, dtype=torch.float):
+    def __init__(
+        self,
+        json_pth: str,
+        modelname: str = '',
+        augment: bool = False,
+        dtype: torch.dtype = torch.float
+    ):
         super().__init__()
 
         self.data = []
@@ -91,7 +98,7 @@ class IndoorDataset(Dataset):
                 # Save tuple
                 self.data.append(tuple(data))
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         # Get data
         img, target = self.data[index]
 
@@ -108,5 +115,5 @@ class IndoorDataset(Dataset):
 
         return img, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)

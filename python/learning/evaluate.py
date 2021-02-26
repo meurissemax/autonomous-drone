@@ -17,16 +17,24 @@ import torch
 from sklearn.metrics import precision_score, recall_score
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from typing import Iterable
 
 from dataset import IndoorDataset
 from models import DenseNet161
+
+
+##########
+# Typing #
+##########
+
+Tensors = Iterable[torch.Tensor]
 
 
 #############
 # Functions #
 #############
 
-def pr_eval(outputs, targets):
+def pr_eval(outputs: Tensors, targets: Tensors) -> list:
     adapt = lambda t: torch.flatten(torch.argmax(t, dim=1))
 
     outputs = adapt(outputs)
@@ -50,13 +58,13 @@ def pr_eval(outputs, targets):
 ########
 
 def main(
-    outputs_pth='outputs/',
-    test_pth='test.json',
-    batch_size=32,
-    num_workers=0,
-    model_id='densenet161',
-    weights_pth='weights.pth',
-    metric_id='pr'
+    outputs_pth: str = 'outputs/',
+    test_pth: str = 'test.json',
+    batch_size: int = 32,
+    num_workers: int = 0,
+    model_id: str = 'densenet161',
+    weights_pth: str = 'weights.pth',
+    metric_id: str = 'pr'
 ):
     # Device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -72,7 +80,12 @@ def main(
     print('Loading data set...')
 
     testset = IndoorDataset(test_pth, model_id)
-    loader = DataLoader(testset, batch_size=batch_size, num_workers=num_workers, pin_memory=True)
+    loader = DataLoader(
+        testset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        pin_memory=device == 'cuda'
+    )
 
     # Model
     models = {

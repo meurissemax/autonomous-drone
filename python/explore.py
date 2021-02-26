@@ -11,6 +11,7 @@ Implementation of the exploration process of the drone.
 from controllers import (
     AirSimDrone,
     AirSimDroneNoisy,
+    Controller,
     TelloEDU
 )
 
@@ -21,7 +22,11 @@ from environment import Environment
 # Functions #
 #############
 
-def explore(env, controller, show):
+def explore(
+    env: Environment,
+    controller: Controller,
+    show: bool = False
+):
     # Determine shortest path to objective
     path = env.path()
 
@@ -50,9 +55,9 @@ def explore(env, controller, show):
 ########
 
 def main(
-    env_pth='indoor-corridor.txt',
-    controller_id='airsim',
-    env_show=False
+    env_pth: str = 'indoor-corridor.txt',
+    controller_id: str = 'airsim',
+    env_show: bool = False
 ):
     # Environment
     env = Environment(env_pth)

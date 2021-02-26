@@ -9,6 +9,15 @@ Implementation of the deep learning models.
 import torch
 import torch.nn as nn
 
+from typing import Iterable
+
+
+##########
+# Typing #
+##########
+
+Tensors = Iterable[torch.Tensor]
+
 
 ###########
 # Classes #
@@ -21,7 +30,14 @@ class Conv(nn.Sequential):
     Implementation of a generic convolution layer.
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int = 1,
+        stride: int = 1,
+        padding: int = 0
+    ):
         super().__init__(
             nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding),
             nn.BatchNorm2d(out_channels),
@@ -43,7 +59,7 @@ class DenseNet161(nn.Module):
     Note: the argument 'in_channels' is unused in this model.
     """
 
-    def __init__(self, _in_channels, out_channels):
+    def __init__(self, _in_channels: int, out_channels: int):
         super().__init__()
 
         # Pre trained original DenseNet161
@@ -62,7 +78,7 @@ class DenseNet161(nn.Module):
             nn.Softmax(dim=1)
         )
 
-    def forward(self, x):
+    def forward(self, x: Tensors) -> Tensors:
         x = self.densenet161(x)
 
         x = self.conv1(x)

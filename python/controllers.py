@@ -60,11 +60,11 @@ class Controller(ABC):
         pass
 
     @abstractmethod
-    def move(self, direction: str, distance: int, speed: int = 50):
+    def move(self, direction: str, distance: float, speed: float = 50.):
         pass
 
     @abstractmethod
-    def rotate(self, direction: str, angle: int):
+    def rotate(self, direction: str, angle: float):
         pass
 
     @abstractmethod
@@ -74,7 +74,7 @@ class Controller(ABC):
     # Camera
 
     @abstractmethod
-    def picture(self) -> np.ndarray:
+    def picture(self) -> np.array:
         pass
 
     # Common
@@ -140,7 +140,7 @@ class AirSimDrone(Controller):
         if landed != airsim.LandedState.Landed:
             self.client.landAsync().join()
 
-    def move(self, direction, distance, speed=50):
+    def move(self, direction, distance, speed=50.):
         error = False
 
         if speed < 10 or speed > 100:
@@ -223,10 +223,10 @@ class AirSimDrone(Controller):
 
     # Specific
 
-    def log(self, message):
+    def log(self, message: str):
         self.client.simPrintLogMessage(message)
 
-    def teleport(self, position):
+    def teleport(self, position: list):
         pose = self.client.simGetVehiclePose()
         pose.position = airsim.Vector3r(*position)
 
@@ -255,7 +255,7 @@ class AirSimDroneNoisy(AirSimDrone):
     def __init__(self):
         super().__init__()
 
-    def _noise(self, value):
+    def _noise(self, value: float) -> float:
         mean = value / 10
         std = value / 50
 
@@ -263,7 +263,7 @@ class AirSimDroneNoisy(AirSimDrone):
 
         return value + noise
 
-    def move(self, direction, distance, speed=50):
+    def move(self, direction, distance, speed=50.):
         super().move(direction, self._noise(distance), speed)
 
     def rotate(self, direction, angle):
@@ -333,7 +333,7 @@ class TelloEDU(Controller):
     def land(self):
         self._send_command('land')
 
-    def move(self, direction, distance, speed=50):
+    def move(self, direction, distance, speed=50.):
         error = False
 
         if speed < 10 or speed > 100:
@@ -385,7 +385,7 @@ class TelloEDU(Controller):
     def battery(self):
         self._send_command('battery?')
 
-    def _send_command(self, command):
+    def _send_command(self, command: str):
         print(f'Command: {fg(6)}{command}{attr(0)}')
 
         self.socket.sendto(

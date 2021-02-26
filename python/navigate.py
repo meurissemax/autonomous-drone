@@ -19,6 +19,7 @@ from analyze import vanishing_point
 from controllers import (
     AirSimDrone,
     AirSimDroneNoisy,
+    Controller,
     TelloEDU
 )
 
@@ -47,7 +48,12 @@ class Navigation(ABC):
     Each navigation algorithm must inherit this class.
     """
 
-    def __init__(self, env, controller, show=False):
+    def __init__(
+        self,
+        env: Environment,
+        controller: Controller,
+        show: bool = False
+    ):
         super().__init__()
 
         self.env = env
@@ -210,7 +216,7 @@ class Vanishing(Navigation):
             'right': partial(self.controller.rotate, 'ccw', 5)
         }
 
-    def _alignment(self, lower, upper):
+    def _alignment(self, lower: tuple, upper: tuple) -> str:
         # Take a picture
         img = self.controller.picture()
 
@@ -225,7 +231,7 @@ class Vanishing(Navigation):
 
         return 'center'
 
-    def _adjust(self, mean, std):
+    def _adjust(self, mean: float, std: float):
         # Get lower and upper intervals
         lower = (mean - 2 * std, mean - std)
         upper = (mean + std, mean + 2 * std)
@@ -287,10 +293,10 @@ class Vanishing(Navigation):
 ########
 
 def main(
-    env_pth='indoor-corridor.txt',
-    controller_id='airsim',
-    algorithm_id='naive',
-    env_show=False
+    env_pth: str = 'indoor-corridor.txt',
+    controller_id: str = 'airsim',
+    algorithm_id: str = 'naive',
+    env_show: bool = False
 ):
     # Environment
     env = Environment(env_pth)

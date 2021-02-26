@@ -16,7 +16,7 @@ import torch
 import torch.nn as nn
 
 from datetime import datetime
-from torch.optim import Adam
+from torch.optim import Adam, Optimizer
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -28,7 +28,13 @@ from models import DenseNet161
 # Functions #
 #############
 
-def train_epoch(loader, device, model, criterion, optimizer):
+def train_epoch(
+    loader: DataLoader,
+    device: torch.device,
+    model: nn.Module,
+    criterion: nn.Module,
+    optimizer: Optimizer
+) -> list:
     """
     Train a model for one epoch.
     """
@@ -56,14 +62,14 @@ def train_epoch(loader, device, model, criterion, optimizer):
 ########
 
 def main(
-    outputs_pth='outputs/',
-    criterion_id='mse',
-    train_pth='train.json',
-    augment=False,
-    batch_size=32,
-    num_workers=0,
-    model_id='densenet161',
-    num_epochs=20
+    outputs_pth: str = 'outputs/',
+    criterion_id: str = 'mse',
+    train_pth: str = 'train.json',
+    augment: bool = False,
+    batch_size: int = 32,
+    num_workers: int = 0,
+    model_id: str = 'densenet161',
+    num_epochs: int = 20
 ):
     # Device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -90,7 +96,13 @@ def main(
     print('Loading data set...')
 
     trainset = IndoorDataset(train_pth, model_id, augment, dtype)
-    loader = DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True)
+    loader = DataLoader(
+        trainset,
+        shuffle=True,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        pin_memory=device == 'cuda'
+    )
 
     # Model
     models = {

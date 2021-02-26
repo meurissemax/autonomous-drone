@@ -16,6 +16,14 @@ import os
 import random
 
 from tqdm import tqdm
+from typing import Dict, List, Tuple
+
+
+##########
+# Typing #
+##########
+
+Dataset = List[Dict]
 
 
 #####################
@@ -45,7 +53,11 @@ INTERVALS = [
 # Functions #
 #############
 
-def _extract(img_name):
+def _extract(img_name: str) -> int:
+    """
+    Extract the timestamp from the image name.
+    """
+
     ts = os.path.splitext(img_name)[0]
     ts = os.path.basename(ts)
     ts = ts.split('_')[-1]
@@ -54,7 +66,12 @@ def _extract(img_name):
     return ts
 
 
-def _list(imgs_pth):
+def _list(imgs_pth: str) -> List[Tuple[str, int]]:
+    """
+    Construct a list of image paths with associated timestamp
+    based on images path.
+    """
+
     # Initialize (image, timestamp) list
     imgs_list = []
 
@@ -72,14 +89,22 @@ def _list(imgs_pth):
     return imgs_list
 
 
-def _prefix(img_pth, prefix):
+def _prefix(img_pth: str, prefix: str) -> str:
+    """
+    Add a prefix to the image base name.
+    """
+
     basename = os.path.basename(img_pth)
     prefix = os.path.dirname(prefix)
 
     return f'{prefix}/{basename}'
 
 
-def _target(ts):
+def _target(ts: int) -> list:
+    """
+    Get the target according to the timestamp.
+    """
+
     for target, lower, upper in INTERVALS:
         if ts >= lower and ts <= upper:
             return target
@@ -87,7 +112,7 @@ def _target(ts):
     return target
 
 
-def annotate(imgs_pth, prefix):
+def annotate(imgs_pth: str, prefix: str) -> Dataset:
     # Get (image, timestamp) list
     imgs_list = _list(imgs_pth)
 
@@ -104,8 +129,12 @@ def annotate(imgs_pth, prefix):
     return annotations
 
 
-def split(annotations, ratio):
-    n = len(annotations)
+def split(dataset: Dataset, ratio: int) -> Tuple[Dataset, Dataset]:
+    """
+    Split a data set into training and testing sets.
+    """
+
+    n = len(dataset)
 
     # Get indexes of training items
     n_train = int(n * max(0, min(ratio, 1)))
@@ -115,13 +144,13 @@ def split(annotations, ratio):
     idxs_test = [i for i in range(n) if i not in idxs_train]
 
     # Create training and testing sets
-    train = [annotations[idx] for idx in idxs_train]
-    test = [annotations[idx] for idx in idxs_test]
+    train = [dataset[idx] for idx in idxs_train]
+    test = [dataset[idx] for idx in idxs_test]
 
     return train, test
 
 
-def export(dataset, json_pth, fname):
+def export(dataset: Dataset, json_pth: str, fname: str):
     pth = os.path.join(json_pth, fname)
 
     with open(pth, 'w') as json_file:
@@ -133,10 +162,10 @@ def export(dataset, json_pth, fname):
 ########
 
 def main(
-    imgs_pth='images/',
-    prefix='',
-    ratio=0.7,
-    json_pth='dataset/'
+    imgs_pth: str = 'images/',
+    prefix: str = '',
+    ratio: int = 0.7,
+    json_pth: str = 'dataset/'
 ):
     # Get annotations
     annotations = annotate(imgs_pth, prefix)

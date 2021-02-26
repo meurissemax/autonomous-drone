@@ -51,10 +51,10 @@ LEGEND = ['Mean']
 def line_graph(
     x: list,
     y: List[list],
-    x_label='Epoch',
-    y_label='Loss',
-    legend=[],
-    file_pth='graph.pdf'
+    x_label: str = 'Epoch',
+    y_label: str = 'Loss',
+    legend: list = [],
+    file_pth: str = 'graph.pdf'
 ):
     # Initialize figure
     plt.figure()
@@ -96,10 +96,10 @@ def line_graph(
 ########
 
 def main(
-    csv_pth='data.csv',
-    x_label='Epoch',
-    y_label='Loss',
-    file_pth='graph.pdf'
+    csv_pth: str = 'data.csv',
+    x_label: str = 'Epoch',
+    y_label: str = 'Loss',
+    file_pth: str = 'graph.pdf'
 ):
     # Read CSV
     df = pd.read_csv(csv_pth, usecols=CSV_COL_LIST)

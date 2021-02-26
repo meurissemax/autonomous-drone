@@ -15,6 +15,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from astar import AStar
+from typing import List, Tuple
+
+
+##########
+# Typing #
+##########
+
+Position = np.array
+Orientation = str
+Direction = str
+Path = np.array
+Action = str
 
 
 ############
@@ -78,7 +90,7 @@ class Environment:
     its orientation.
     """
 
-    def __init__(self, env_pth):
+    def __init__(self, env_pth: str):
         # Load the environment
         grid, lines = [], []
         pos, omega = [0, 0], 'N'
@@ -140,7 +152,12 @@ class Environment:
             'E': '>'
         }
 
-    def _next(self, pos, omega, d):
+    def _next(
+        self,
+        pos: Position,
+        omega: Orientation,
+        d: Direction
+    ) -> Tuple[Position, Orientation]:
         transition = self.t_move.get(d).get(omega)
 
         # Move
@@ -154,11 +171,11 @@ class Environment:
 
         return pos, omega
 
-    def move(self, d, times=1):
+    def move(self, d: Direction, times: int = 1):
         for _ in range(times):
             self.pos, self.omega = self._next(self.pos, self.omega, d)
 
-    def path(self, start=None, end=None):
+    def path(self, start: tuple = None, end: tuple = None) -> Path:
         a = start if start is not None else tuple(self.pos)
         b = end if end is not None else tuple(self.obj)
 
@@ -166,7 +183,7 @@ class Environment:
 
         return path[1:]
 
-    def sequence(self, path):
+    def sequence(self, path: Path) -> List[Action]:
         # Initial position and orientation
         pos, omega = self.pos, self.omega
 
@@ -214,7 +231,11 @@ class Environment:
 
         return actions
 
-    def group(self, actions, limit=5):
+    def group(
+        self,
+        actions: List[Action],
+        limit: int = 5
+    ) -> List[Tuple[Action, int]]:
         grouped = []
         previous = None
 
@@ -236,10 +257,16 @@ class Environment:
 
         return grouped
 
-    def has_reached_obj(self):
+    def has_reached_obj(self) -> bool:
         return (self.pos == self.obj).all()
 
-    def render(self, draw=True, export=None, path=None, what=[]):
+    def render(
+        self,
+        draw: bool = True,
+        export: str = None,
+        path: Path = None,
+        what: list = []
+    ):
         # Grid
         plt.figure('Environment', figsize=(8, 6))
         plt.clf()
@@ -291,7 +318,7 @@ class Environment:
 ########
 
 def main(
-    env_pth='indoor-corridor.txt'
+    env_pth: str = 'indoor-corridor.txt'
 ):
     # Create the environment
     env = Environment(env_pth)

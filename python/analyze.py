@@ -15,13 +15,22 @@ import os
 
 from itertools import product
 from PIL import Image
+from typing import List, Tuple
+
+
+##########
+# Typing #
+##########
+
+Point = Tuple
+Line = Tuple[Point, Point]
 
 
 #############
 # Functions #
 #############
 
-def _preprocess(img):
+def _preprocess(img: np.array) -> np.array:
     # Bilateral filtering
     d = 10
     sigma_color = 10
@@ -37,7 +46,7 @@ def _preprocess(img):
     return img
 
 
-def _edges(img):
+def _edges(img: np.array) -> np.array:
     # Canny's algorithm
     lo_thresh = 50
     hi_thresh = 250
@@ -63,7 +72,7 @@ def _edges(img):
     return img
 
 
-def _lines(img):
+def _lines(img: np.array) -> List[Line]:
     # Hough transform
     rho = 1
     theta = np.pi / 180
@@ -95,7 +104,7 @@ def _lines(img):
     return pts
 
 
-def _intersections(lines):
+def _intersections(lines: List[Line]) -> List[Point]:
     inters = []
 
     def det(a, b):
@@ -122,7 +131,7 @@ def _intersections(lines):
     return inters
 
 
-def vanishing_point(img, export=False):
+def vanishing_point(img: np.array, export: bool = False) -> Point:
     """
     Return the coordinates, in pixels, of the vanishing point
     of the image.
@@ -196,8 +205,8 @@ def vanishing_point(img, export=False):
 ########
 
 def main(
-    img_pth='image.png',
-    export_pth='analysis/'
+    img_pth: str = 'image.png',
+    export_pth: str = 'analysis/'
 ):
     # Open image
     img = Image.open(img_pth)
