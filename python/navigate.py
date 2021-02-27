@@ -86,8 +86,8 @@ class Naive(Navigation):
         path = self.env.path()
 
         # Get list of actions to follow the path
-        actions = self.env.sequence(path)
-        actions = self.env.group(actions)
+        actions = self.env.path_to_seq(path)
+        actions = self.env.group_seq(actions)
 
         # Show the environment
         if self.show:
@@ -252,7 +252,7 @@ class Vanishing(Navigation):
         path = self.env.path()
 
         # Get list of actions to follow the path
-        actions = self.env.sequence(path)
+        actions = self.env.path_to_seq(path)
 
         # Show the environment
         if self.show:
