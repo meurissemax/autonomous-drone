@@ -151,6 +151,10 @@ def split(dataset: Dataset, ratio: int) -> Tuple[Dataset, Dataset]:
 
 
 def export(dataset: Dataset, json_pth: str, fname: str):
+    """
+    Export a data set to a JSON file.
+    """
+
     pth = os.path.join(json_pth, fname)
 
     with open(pth, 'w') as json_file:

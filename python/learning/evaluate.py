@@ -35,6 +35,10 @@ Tensors = Iterable[torch.Tensor]
 #############
 
 def pr_eval(outputs: Tensors, targets: Tensors) -> list:
+    """
+    Compute precision and recall evaluation metrics.
+    """
+
     def adapt(t: Tensors):
         return torch.flatten(torch.argmax(t, dim=1))
 
