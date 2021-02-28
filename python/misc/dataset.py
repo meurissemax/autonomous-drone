@@ -34,13 +34,16 @@ Dataset = List[Dict]
 Intervals used to annotate images. Each interval is a tuple
 composed of
     - target (in format directly useable by PyTorch);
-    - timestamp lower bound;
-    - timestamp upper bound.
+    - ID lower bound;
+    - ID upper bound.
 
 Each interval is defined by [lower_bound, upper_bound]. The
-following example will annotate each image whose timestamp is
-in [0, 100] by [1, 0] and each image whose timestamp is in
-[101, 200] by [0, 1].
+following example will annotate each image whose ID is in
+[0, 100] by [1, 0] and each image whose ID is in [101, 200]
+by [0, 1].
+
+The ID of an image must be at the end of the image name,
+separed by an underscore, e.g. img_1.png.
 """
 
 INTERVALS = [
@@ -55,29 +58,29 @@ INTERVALS = [
 
 def _extract(img_name: str) -> int:
     """
-    Extract the timestamp from the image name.
+    Extract the ID from the image name.
     """
 
-    ts = os.path.splitext(img_name)[0]
-    ts = os.path.basename(ts)
-    ts = ts.split('_')[-1]
-    ts = int(ts)
+    img_id = os.path.splitext(img_name)[0]
+    img_id = os.path.basename(img_id)
+    img_id = img_id.split('_')[-1]
+    img_id = int(img_id)
 
-    return ts
+    return img_id
 
 
 def _list(imgs_pth: str) -> List[Tuple[str, int]]:
     """
-    Construct a list of image paths with associated timestamp
+    Construct a list of image paths with associated ID
     based on images path.
     """
 
-    # Initialize (image, timestamp) list
+    # Initialize (image, ID) list
     imgs_list = []
 
     # Get path of all images
     imgs_pth = os.path.dirname(imgs_pth)
-    imgs = glob.glob(f'{imgs_pth}/*.png')
+    imgs = glob.glob(f'{imgs_pth}/**/*.png', recursive=True)
 
     # Iterate over each image
     for img in imgs:
@@ -89,41 +92,30 @@ def _list(imgs_pth: str) -> List[Tuple[str, int]]:
     return imgs_list
 
 
-def _prefix(img_pth: str, prefix: str) -> str:
+def _target(img_id: int) -> list:
     """
-    Add a prefix to the image base name.
-    """
-
-    basename = os.path.basename(img_pth)
-    prefix = os.path.dirname(prefix)
-
-    return f'{prefix}/{basename}'
-
-
-def _target(ts: int) -> list:
-    """
-    Get the target according to the timestamp.
+    Get the target according to the ID.
     """
 
     for target, lower, upper in INTERVALS:
-        if ts >= lower and ts <= upper:
+        if img_id >= lower and img_id <= upper:
             return target
 
     return target
 
 
-def annotate(imgs_pth: str, prefix: str) -> Dataset:
-    # Get (image, timestamp) list
+def annotate(imgs_pth: str) -> Dataset:
+    # Get (image, ID) list
     imgs_list = _list(imgs_pth)
 
     # Initialize annotations
     annotations = []
 
     # Iterate over each image
-    for img, ts in tqdm(imgs_list):
+    for img, img_id in tqdm(imgs_list):
         annotations.append({
-            'image': _prefix(img, prefix),
-            'target': _target(ts)
+            'image': img,
+            'target': _target(img_id)
         })
 
     return annotations
@@ -167,12 +159,11 @@ def export(dataset: Dataset, json_pth: str, fname: str):
 
 def main(
     imgs_pth: str = 'images/',
-    prefix: str = '',
     ratio: int = 0.7,
     json_pth: str = 'dataset/'
 ):
     # Get annotations
-    annotations = annotate(imgs_pth, prefix)
+    annotations = annotate(imgs_pth)
 
     # Split data set
     train, test = split(annotations, ratio)
@@ -198,14 +189,6 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '-p',
-        '--prefix',
-        type=str,
-        default='',
-        help='prefix to add before each image name'
-    )
-
-    parser.add_argument(
         '-r',
         '--ratio',
         type=float,
@@ -225,7 +208,6 @@ if __name__ == '__main__':
 
     main(
         imgs_pth=args.images,
-        prefix=args.prefix,
         ratio=args.ratio,
         json_pth=args.json
     )
