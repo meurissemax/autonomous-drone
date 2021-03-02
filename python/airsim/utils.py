@@ -13,34 +13,34 @@ from .types import *
 
 def string_to_uint8_array(bstr):
     return np.fromstring(bstr, np.uint8)
-    
+
 def string_to_float_array(bstr):
     return np.fromstring(bstr, np.float32)
-    
+
 def list_to_2d_float_array(flst, width, height):
     return np.reshape(np.asarray(flst, np.float32), (height, width))
-    
+
 def get_pfm_array(response):
     return list_to_2d_float_array(response.image_data_float, response.width, response.height)
 
-    
+
 def get_public_fields(obj):
     return [attr for attr in dir(obj)
-                            if not (attr.startswith("_") 
+                            if not (attr.startswith("_")
                             or inspect.isbuiltin(attr)
                             or inspect.isfunction(attr)
                             or inspect.ismethod(attr))]
 
 
-    
+
 def to_dict(obj):
     return dict([attr, getattr(obj, attr)] for attr in get_public_fields(obj))
 
-    
+
 def to_str(obj):
     return str(to_dict(obj))
 
-    
+
 def write_file(filename, bstr):
     """
     Write binary data to file.
@@ -51,7 +51,7 @@ def write_file(filename, bstr):
 
 # helper method for converting getOrientation to roll/pitch/yaw
 # https:#en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
-    
+
 def to_eularian_angles(q):
     z = q.z_val
     y = q.y_val
@@ -79,7 +79,7 @@ def to_eularian_angles(q):
 
     return (pitch, roll, yaw)
 
-    
+
 def to_quaternion(pitch, roll, yaw):
     t0 = math.cos(yaw * 0.5)
     t1 = math.sin(yaw * 0.5)
@@ -95,7 +95,7 @@ def to_quaternion(pitch, roll, yaw):
     q.z_val = t1 * t2 * t4 - t0 * t3 * t5 #z
     return q
 
-    
+
 def wait_key(message = ''):
     ''' Wait for a key press on the console and return it. '''
     if message != '':
@@ -123,7 +123,7 @@ def wait_key(message = ''):
 
     return result
 
-    
+
 def read_pfm(file):
     """ Read a pfm file """
     file = open(file, 'rb')
@@ -163,10 +163,10 @@ def read_pfm(file):
     data = np.reshape(data, shape)
     # DEY: I don't know why this was there.
     file.close()
-    
+
     return data, scale
 
-    
+
 def write_pfm(file, image, scale=1):
     """ Write a pfm file """
     file = open(file, 'wb')
@@ -197,7 +197,7 @@ def write_pfm(file, image, scale=1):
 
     image.tofile(file)
 
-    
+
 def write_png(filename, image):
     """ image must be numpy array H X W X channels
     """

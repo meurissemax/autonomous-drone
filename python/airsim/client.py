@@ -110,7 +110,7 @@ class VehicleClient:
             seconds (float): Time to run the simulation for
         """
         self.client.call('simContinueForTime', seconds)
-    
+
     def simContinueForFrames(self, frames):
         """
         Continue (or resume if paused) the simulation for the specified number of frames, after which the simulation will be paused.
@@ -408,13 +408,13 @@ class VehicleClient:
 
     def simSpawnObject(self, object_name, asset_name, pose, scale, physics_enabled=False):
         """Spawned selected object in the world
-        
+
         Args:
             object_name (str): Desired name of new object
             asset_name (str): Name of asset(mesh) in the project database
             pose (airsim.Pose): Desired pose of object
             scale (airsim.Vector3r): Desired scale of object
-        
+
         Returns:
             str: Name of spawned object, in case it had to be modified
         """
@@ -422,10 +422,10 @@ class VehicleClient:
 
     def simDestroyObject(self, object_name):
         """Removes selected object from the world
-        
+
         Args:
             object_name (str): Name of object to be removed
-        
+
         Returns:
             bool: True if object is queued up for removal
         """
@@ -502,7 +502,7 @@ class VehicleClient:
         Returns:
             List (float): List of distortion parameter values corresponding to K1, K2, K3, P1, P2 respectively.
         """
-    
+
         return self.client.call('simGetDistortionParams', str(camera_name), vehicle_name)
 
     def simSetDistortionParams(self, camera_name, distortion_params, vehicle_name = ''):
@@ -669,6 +669,7 @@ class VehicleClient:
 
     def simGetLidarSegmentation(self, lidar_name = '', vehicle_name = ''):
         """
+        NOTE: Deprecated API, use `getLidarData()` API instead
         Returns Segmentation ID of each point's collided object in the last Lidar update
 
         Args:
@@ -678,7 +679,8 @@ class VehicleClient:
         Returns:
             list[int]: Segmentation IDs of the objects
         """
-        return self.client.call('simGetLidarSegmentation', lidar_name, vehicle_name)
+        logging.warning("simGetLidarSegmentation API is deprecated, use getLidarData() API instead")
+        return self.getLidarData(lidar_name, vehicle_name).segmentation
 
     #  Plotting APIs
     def simFlushPersistentMarkers(self):
@@ -835,7 +837,7 @@ class VehicleClient:
         Set simulated wind, in World frame, NED direction, m/s
 
         Args:
-            wind (Vector3r): Wind, in World frame, NED direction, in m/s 
+            wind (Vector3r): Wind, in World frame, NED direction, in m/s
         """
         self.client.call('simSetWind', wind)
 
@@ -914,7 +916,7 @@ class MultirotorClient(VehicleClient, object):
             msgpackrpc.future.Future: future. call .join() to wait for method to finish. Example: client.METHOD().join()
         """
         return self.client.call_async('moveByVelocityBodyFrame', vx, vy, vz, duration, drivetrain, yaw_mode, vehicle_name)
-        
+
     def moveByAngleZAsync(self, pitch, roll, z, yaw, duration, vehicle_name = ''):
         return self.client.call_async('moveByAngleZ', pitch, roll, z, yaw, duration, vehicle_name)
 
@@ -1282,7 +1284,20 @@ class MultirotorClient(VehicleClient, object):
         """
         return MultirotorState.from_msgpack(self.client.call('getMultirotorState', vehicle_name))
     getMultirotorState.__annotations__ = {'return': MultirotorState}
+    # query rotor states
+    def getRotorStates(self, vehicle_name = ''):
+        """
+        Used to obtain the current state of all a multirotor's rotors. The state includes the speeds,
+        thrusts and torques for all rotors.
 
+        Args:
+            vehicle_name (str, optional): Vehicle to get the rotor state of
+
+        Returns:
+            RotorStates: Containing a timestamp and the speed, thrust and torque of all rotors.
+        """
+        return RotorStates.from_msgpack(self.client.call('getRotorStates', vehicle_name))
+    getRotorStates.__annotations__ = {'return': RotorStates}
 
 # -----------------------------------  Car APIs ---------------------------------------------
 class CarClient(VehicleClient, object):

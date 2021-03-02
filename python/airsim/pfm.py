@@ -50,7 +50,7 @@ def read_pfm(file):
     data = np.reshape(data, shape)
     # DEY: I don't know why this was there.
     file.close()
-    
+
     return data, scale
 
 
