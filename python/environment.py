@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Implementation of a tool to represent the environment
+Implementation of tools to represent an environment
 and interact with it.
 """
 
@@ -16,7 +16,7 @@ import numpy as np
 import operator
 
 from astar import AStar
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 
 ##########
@@ -28,11 +28,12 @@ Grid = np.array
 Position = Tuple[int, int]
 Orientation = str  # N, S, W, E
 
-Direction = str  # up, down, left, right
 Action = str  # forward, left, right
 
 Objective = Position
 Path = List[Position]
+
+Keypoint = Tuple[Action, Position]
 
 Batteries = List[Position]
 
@@ -104,28 +105,48 @@ class Environment:
     Implementation of the representation of the
     environment.
 
-    The agent is represented by its position and
-    its orientation.
+    An environment representation must be stored in a text
+    file (.txt). Its shape has to be a grid (m * n elements).
+
+    Features of the environment are represented by a serie
+    of characters, i.e.
+        . : a free position
+        # : a non free position
+        [N, S, W, E] : position of the agent, represented by a letter
+                       indicating its orientation
+        B : a battery station
+        * : the objective to reach (only once by representation)
+        + : a staircase that goes up THAT THE DRONE MUST TAKE. Hence,
+            this character acts as an objective. If there is a staircase
+            but the drone don't need to take it, no need to use this
+            character (so, only once by representation, if needed)
+        - : a staircase that goes down (same remark for the staircase)
+
+    Example of a small environment:
+
+    ######
+    #*...#
+    #...B#
+    #....#
+    #...N#
+    ######
     """
 
+    # Initialization
+
     def __init__(self, env_pth: str):
-        # Load the environment
-        grid, pos, omega, obj, batteries = self._load_env(env_pth)
-
-        self.grid = grid
-        self.n, self.m = grid.shape
-        self.pos, self.omega = pos, omega
-        self.obj = obj
-        self.batteries = batteries
-
-        # Path finder
-        self.path_finder = PathFinding(self.grid)
+        # Actions
+        self.move_actions = ['forward']
+        self.turn_actions = ['left', 'right']
+        self.orientations = ['N', 'S', 'W', 'E']
 
         # Transition matrices
         self.t_move = {
             'forward': {'N': [-1, 0], 'S': [1, 0], 'W': [0, -1], 'E': [0, 1]},
             'left': {'N': 'W', 'S': 'E', 'W': 'S', 'E': 'N'},
             'right': {'N': 'E', 'S': 'W', 'W': 'N', 'E': 'S'},
+            'up': {'N': 'N', 'S': 'S', 'W': 'W', 'E': 'E'},
+            'down': {'N': 'N', 'S': 'S', 'W': 'W', 'E': 'E'}
         }
 
         self.t_actions = {
@@ -136,9 +157,6 @@ class Environment:
         }
 
         # Plot
-        self.xticks = np.arange(0, self.m, 1)
-        self.yticks = np.arange(0, self.n, 1)
-
         self.markers = {
             'N': '^',
             'S': 'v',
@@ -146,19 +164,20 @@ class Environment:
             'E': '>'
         }
 
-    def _load_env(
-        self,
-        env_pth: str
-    ) -> Tuple[Grid, Position, Orientation, Objective, Batteries]:
+        # Load the environment and everything related
+        self.load(env_pth)
+
+    def load(self, env_pth: str):
         """
-        Load the environment stored in a text file and get all information
+        Load an environment representation and save all information
         about it.
         """
 
         # Initialize
         grid, lines = [], []
-        pos, omega = (0, 0), 'N'
-        obj = (0, 0)
+        pos, omega = None, None
+        obj = None
+        staircases = []
         batteries = []
 
         # Get lines of the file
@@ -172,22 +191,83 @@ class Environment:
             for j, char in enumerate(line):
                 if char == '#':
                     row.append(1)
-                elif char in ['.', '*', 'B', 'N', 'S', 'W', 'E']:
+                elif char == '.':
+                    row.append(0)
+                elif char in self.orientations:
                     row.append(0)
 
-                    if char == '*':
-                        obj = (i, j)
-                    elif char == 'B':
-                        batteries.append((i, j))
-                    elif char in ['N', 'S', 'W', 'E']:
-                        pos, omega = (i, j), char
+                    pos, omega = (i, j), char
+                elif char == 'B':
+                    row.append(0)
+
+                    batteries.append((i, j))
+                elif char in ['*', '+', '-']:
+                    row.append(0)
+
+                    obj = (i, j)
+
+                    if char == '+':
+                        staircases.append(('up', (i, j)))
+                    elif char == '-':
+                        staircases.append(('down', (i, j)))
 
             grid.append(row)
 
-        # Convert
-        grid = np.array(grid)
+        # Save information
+        self.grid = np.array(grid)
+        self.n, self.m = self.grid.shape
+        self.pos, self.omega = pos, omega
+        self.obj = obj
+        self.staircases = staircases
+        self.batteries = batteries
 
-        return grid, pos, omega, obj, batteries
+        # Path finder
+        self.path_finder = PathFinding(self.grid)
+
+        # Plot
+        self.xticks = np.arange(0, self.m, 1)
+        self.yticks = np.arange(0, self.n, 1)
+
+    # Misc
+
+    def _bound(self, p: Position) -> Position:
+        """
+        Bound a position in the environment limits.
+        """
+
+        i, j = p
+
+        i = min(max(0, i), self.n - 1)
+        j = min(max(0, j), self.m - 1)
+
+        return i, j
+
+    def _is_free(self, p: Position) -> bool:
+        """
+        Check if a position is valid and free.
+        """
+
+        i, j = p
+
+        return 0 <= i < self.n and 0 <= j < self.m and self.grid[i, j] == 0
+
+    def _neighbors(self, p: Position) -> Dict[str, Position]:
+        """
+        Get neighbors of a position.
+        """
+
+        i, j = p
+
+        neighbors = {
+            'up': (i - 1, j),
+            'down': (i + 1, j),
+            'left': (i, j - 1),
+            'right': (i, j + 1)
+        }
+
+        return neighbors
+
+    # Battery
 
     def _battery_distance(self, battery: int) -> int:
         """
@@ -230,40 +310,56 @@ class Environment:
 
         return None
 
+    # Move in environment
+
     def _next(
         self,
         pos: Position,
         omega: Orientation,
-        d: Direction
+        action: Action
     ) -> Tuple[Position, Orientation]:
         """
-        Get the new position and orientation of the agent if it moves in a
-        certain direction.
+        Get the new position and orientation of the agent if it executes
+        a certain action.
         """
 
-        transition = self.t_move.get(d).get(omega)
+        transition = self.t_move.get(action).get(omega)
 
         # Move
-        if d == 'forward':
+        if action in self.move_actions:
             pos = tuple(i + j for i, j in zip(pos, transition))
-
-            pos = max(0, pos[0]), max(0, pos[1])
-            pos = min(pos[0], self.n - 1), min(pos[1], self.m - 1)
+            pos = self._bound(pos)
 
         # Rotate
-        elif d in ['left', 'right']:
+        elif action in self.turn_actions:
             omega = transition
 
         return pos, omega
 
-    def move(self, d: Direction, times: int = 1):
+    def move(self, action: Action, times: int = 1):
         """
-        Effectively move the agent in the environment
-        representation.
+        Update the position and orientation of the agent based on
+        an action.
         """
 
         for _ in range(times):
-            self.pos, self.omega = self._next(self.pos, self.omega, d)
+            self.pos, self.omega = self._next(self.pos, self.omega, action)
+
+    def update(self, p: Position, action: Action):
+        """
+        Update the position and orientation of the agent based on
+        new position and an action.
+        """
+
+        # Update position
+        if self._is_free(p):
+            self.pos = p
+
+        # Update orientation
+        if action in self.turn_actions:
+            _, self.omega = self._next(self.pos, self.omega, action)
+
+    # Path planning and corresponding actions
 
     def path(
         self,
@@ -332,15 +428,8 @@ class Environment:
         while idx < n_points:
             point = path[idx]
 
-            i, j = pos
-
             # Get neighbors of the current position
-            neighbors = {
-                'up': (i - 1, j),
-                'down': (i + 1, j),
-                'left': (i, j - 1),
-                'right': (i, j + 1)
-            }
+            neighbors = self._neighbors(pos)
 
             # Check which neighbor the current point is
             neighbor = None
@@ -356,26 +445,21 @@ class Environment:
                 action = self.t_actions.get(neighbor).get(omega)
                 actions.append(action)
 
-                idx = idx + 1 if action == 'forward' else idx
+                idx = idx + 1 if action in self.move_actions else idx
 
                 # Update theoretical position and orientation
                 pos, omega = self._next(pos, omega, action)
             else:
                 break
 
+        # Check if objective is a staircase
+        obj = path[-1]
+
+        for action, p in self.staircases:
+            if obj == p:
+                actions.append(action)
+
         return actions
-
-    def isolate_turns(
-        self,
-        actions: List[Action]
-    ) -> List[Action]:
-        """
-        Isolate, from a serie of actions, the turning actions.
-        """
-
-        turn_actions = ['left', 'right']
-
-        return [a for a in actions if a in turn_actions]
 
     def group_seq(
         self,
@@ -398,7 +482,7 @@ class Environment:
             add = not(action == previous)
 
             if action == previous:
-                if action == 'forward' and grouped[-1][1] >= limit:
+                if action in self.move_actions and grouped[-1][1] >= limit:
                     add = True
                 else:
                     grouped[-1][1] += 1
@@ -412,12 +496,69 @@ class Environment:
 
         return grouped
 
+    # Key points
+
+    def _is_keypoint(self, p: Position) -> bool:
+        """
+        Check if a point of the environment is a key point.
+        """
+
+        # Get neighbors of the point
+        neighbors = list(self._neighbors(p).values())
+
+        # Filter by free neighbors
+        free = [n for n in neighbors if self._is_free(n)]
+
+        # Using free neighbors, check if point is a key point
+        n_unique = 0
+
+        for axis in [0, 1]:
+            n = len(set([p[axis] for p in free]))
+            n_unique += n
+
+        return n_unique > 3
+
+    def extract_keypoints(
+        self,
+        path: Path,
+        actions: List[Action]
+    ) -> List[Keypoint]:
+        """
+        Isolate, from a path and its corresponding serie of actions, the
+        key points and their corresponding positions.
+        """
+
+        # Get key point positions of the path
+        points = [p for p in path if self._is_keypoint(p)]
+
+        # Get type of each key point
+        types = []
+
+        previous = None
+        pos, omega = self.pos, self.omega
+
+        for action in actions:
+            if pos in points and pos != previous:
+                types.append(action)
+
+            previous = pos
+            pos, omega = self._next(pos, omega, action)
+
+        # Construct list of key points
+        keypoints = list(zip(types, points))
+
+        return keypoints
+
+    # Objective
+
     def has_reached_obj(self) -> bool:
         """
         Check if the agent has reached its objective.
         """
 
         return self.pos == self.obj
+
+    # Rendering
 
     def render(
         self,
@@ -447,13 +588,13 @@ class Environment:
                 plt.scatter(i, j, c='green', marker='P', s=100)
 
         # Objective
-        if 'obj' in what:
+        if 'obj' in what and self.obj is not None:
             j, i = self.obj
 
             plt.scatter(i, j, c='orange', marker='*', s=100)
 
         # Agent position
-        if 'pos' in what:
+        if 'pos' in what and self.pos is not None:
             j, i = self.pos
             marker = self.markers.get(self.omega)
 
@@ -509,11 +650,11 @@ def main(
     print('Sequence of actions')
     print(sequence)
 
-    # Isolate turn actions
-    turns = env.isolate_turns(sequence)
+    # Extract key points
+    keypoints = env.extract_keypoints(path, sequence)
 
-    print('Turn actions')
-    print(turns)
+    print('Key points')
+    print(keypoints)
 
     # Group sequence of action
     grouped = env.group_seq(sequence)
