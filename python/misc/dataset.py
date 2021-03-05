@@ -4,6 +4,17 @@
 Implementation of tools used to generate a data set
 (annotate images and split intro training and testing
 sets).
+
+Input images can be annotated using either target values
+associated to them (using intervals) or target images.
+
+In case of intervals, they must be defined in the
+"General variables" section.
+
+In case of target images, input images and target images
+must be in separate folders and ordered such that the first
+image in the input folder is associated to the first image
+in the target folder, etc.
 """
 
 ###########
@@ -48,7 +59,7 @@ separed by an underscore, e.g. img_1.png.
 
 INTERVALS = [
     ([1, 0], 0, 100),
-    ([0, 1], 101, 200),
+    ([0, 1], 101, 200)
 ]
 
 
@@ -64,7 +75,11 @@ def _extract(img_name: str) -> int:
     img_id = os.path.splitext(img_name)[0]
     img_id = os.path.basename(img_id)
     img_id = img_id.split('_')[-1]
-    img_id = int(img_id)
+
+    try:
+        img_id = int(img_id)
+    except ValueError:
+        img_id = -1
 
     return img_id
 
@@ -104,19 +119,35 @@ def _target(img_id: int) -> list:
     return target
 
 
-def annotate(imgs_pth: str) -> Dataset:
-    # Get (image, ID) list
-    imgs_list = _list(imgs_pth)
+def annotate(inpt_pth: str, trgt_pth: str = None) -> Dataset:
+    # Get input (image, ID) list
+    inpt_list = _list(inpt_pth)
 
     # Initialize annotations
     annotations = []
 
-    # Iterate over each image
-    for img, img_id in tqdm(imgs_list):
-        annotations.append({
-            'image': img,
-            'target': _target(img_id)
-        })
+    # Annotate using intervals
+    if trgt_pth is None:
+        for img, img_id in tqdm(inpt_list):
+            annotations.append({
+                'image': img,
+                'target': _target(img_id)
+            })
+
+    # Annotate using target images
+    else:
+
+        # Get target (image, ID) list
+        trgt_list = _list(trgt_pth)
+
+        # Concatenate list
+        imgs_list = zip(inpt_list, trgt_list)
+
+        for inpt, trgt, in tqdm(imgs_list):
+            annotations.append({
+                'image': inpt[0],
+                'target': trgt[0]
+                })
 
     return annotations
 
@@ -158,12 +189,13 @@ def export(dataset: Dataset, json_pth: str, fname: str):
 ########
 
 def main(
-    imgs_pth: str = 'images/',
+    inpt_pth: str = 'inputs/',
+    trgt_pth: str = None,
     ratio: int = 0.7,
     json_pth: str = 'dataset/'
 ):
     # Get annotations
-    annotations = annotate(imgs_pth)
+    annotations = annotate(inpt_pth, trgt_pth)
 
     # Split data set
     train, test = split(annotations, ratio)
@@ -182,10 +214,18 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '-i',
-        '--images',
+        '--inputs',
         type=str,
-        default='images/',
-        help='path to images of the data set'
+        default='inputs/',
+        help='path to input images of the data set'
+    )
+
+    parser.add_argument(
+        '-t',
+        '--targets',
+        type=str,
+        default=None,
+        help='path to target images of the data set'
     )
 
     parser.add_argument(
@@ -207,7 +247,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(
-        imgs_pth=args.images,
+        inpt_pth=args.inputs,
+        trgt_pth=args.targets,
         ratio=args.ratio,
         json_pth=args.json
     )
