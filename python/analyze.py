@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 """
-Implementation of analysis methods based on
-environment information.
+Implementation of analysis methods based on environment information.
 """
 
 ###########
@@ -13,191 +12,242 @@ import cv2
 import numpy as np
 import os
 
+from abc import ABC, abstractmethod
 from itertools import product
-from PIL import Image
-from typing import List, Tuple
+from PIL import Image as PImage
+from typing import List, Tuple, Union
 
 
 ##########
 # Typing #
 ##########
 
+Image = np.array
 Point = Tuple
 Line = Tuple[Point, Point]
+Intermediate = List[Image]
 
 
-#############
-# Functions #
-#############
+###########
+# Classes #
+###########
 
-def _preprocess(img: np.array) -> np.array:
-    # Bilateral filtering
-    d = 10
-    sigma_color = 10
-    sigma_space = 100
+# Vanishing point detection
 
-    img = cv2.bilateralFilter(
-        img,
-        d,
-        sigma_color,
-        sigma_space
-    )
-
-    return img
-
-
-def _edges(img: np.array) -> np.array:
-    # Canny's algorithm
-    lo_thresh = 50
-    hi_thresh = 250
-    filter_size = 3
-
-    img = cv2.Canny(
-        img,
-        lo_thresh,
-        hi_thresh,
-        apertureSize=filter_size,
-        L2gradient=True
-    )
-
-    # Gaussian blur
-    blur_size = 3
-
-    img = cv2.GaussianBlur(
-        img,
-        (blur_size, blur_size),
-        0
-    )
-
-    return img
-
-
-def _lines(img: np.array) -> List[Line]:
-    # Hough transform
-    rho = 1
-    theta = np.pi / 180
-    thresh = 10
-    min_line_length = 15
-    max_line_gap = 5
-
-    lines = cv2.HoughLinesP(
-        img,
-        rho,
-        theta,
-        thresh,
-        minLineLength=min_line_length,
-        maxLineGap=max_line_gap
-    )
-
-    # Get and filter end points
-    x_thresh = 35
-    y_thresh = 20
-
-    pts = []
-
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
-
-        if abs(x1 - x2) > x_thresh and abs(y1 - y2) > y_thresh:
-            pts.append(((x1, y1), (x2, y2)))
-
-    return pts
-
-
-def _intersections(lines: List[Line]) -> List[Point]:
-    inters = []
-
-    def det(a, b):
-        return a[0] * b[1] - a[1] * b[0]
-
-    for i, l1 in enumerate(lines):
-        for l2 in lines[i + 1:]:
-            if not l1 == l2:
-                x_diff = (l1[0][0] - l1[1][0], l2[0][0] - l2[1][0])
-                y_diff = (l1[0][1] - l1[1][1], l2[0][1] - l2[1][1])
-
-                div = det(x_diff, y_diff)
-
-                if div == 0:
-                    continue
-
-                d = (det(*l1), det(*l2))
-
-                x = det(d, x_diff) / div
-                y = det(d, y_diff) / div
-
-                inters.append((x, y))
-
-    return inters
-
-
-def vanishing_point(img: np.array, export: bool = False) -> Point:
+class VPDetector(ABC):
     """
-    Return the coordinates, in pixels, of the vanishing point
-    of the image.
+    Abstract class used to define a vanishing point detector.
 
-    This function is largely inspired from:
-        - https://github.com/SZanlongo/vanishing-point-detection
+    Each vanishing point detector must inherit this class.
     """
 
-    # Color convention
-    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    def __init__(self, export: bool = False):
+        """
+        When the 'export' flag is True, the method returns the
+        vanishing point and all intermediate results.
 
-    # Image dimensions
-    h, w, _ = img.shape
+        When the 'export' flag is False, the method only returns
+        the vanishing point.
+        """
 
-    # Grid dimensions
-    grid_size = min(h, w) // 5
+        super().__init__()
 
-    rows = (h // grid_size) + 1
-    cols = (w // grid_size) + 1
+        self.export = export
 
-    # Initialize guess (cell with most intersections)
-    max_inter = 0
-    guess = (0.0, 0.0)
+    @abstractmethod
+    def detect(img: Image) -> Union[Point, Tuple[Point, Intermediate]]:
+        """
+        Return the coordinates, in pixels, of the vanishing point
+        of the image (and eventually all intermediate results).
+        """
 
-    # Get intersections
-    preprocessed = _preprocess(img)
-    edges = _edges(preprocessed)
-    lines = _lines(edges)
-    intersections = _intersections(lines)
+        pass
 
-    # Find best cell
-    for i, j in product(range(cols), range(rows)):
-        left = i * grid_size
-        right = (i + 1) * grid_size
-        bottom = j * grid_size
-        top = (j + 1) * grid_size
 
-        if export:
-            cv2.rectangle(img, (left, bottom), (right, top), (0, 0, 255), 2)
+class VPClassic(VPDetector):
+    """
+    Implementation of a vanishing point detector based on
+    classic methods (Canny's algorithm and Hough transform).
+    """
 
-        n_inter = 0
+    def __init__(self, export=False):
+        super().__init__(export)
 
-        for x, y in intersections:
-            if left < x < right and bottom < y < top:
-                n_inter += 1
+    # Specific
 
-        if n_inter > max_inter:
-            max_inter = n_inter
-            guess = ((left + right) / 2, (bottom + top) / 2)
+    def _preprocess(self, img: Image) -> Image:
+        # Bilateral filtering
+        d = 10
+        sigma_color = 10
+        sigma_space = 100
 
-    # Draw best cell
-    if export:
-        gx, gy = guess
-        mgs = grid_size / 2
+        img = cv2.bilateralFilter(
+            img,
+            d,
+            sigma_color,
+            sigma_space
+        )
 
-        rx1 = int(gx - mgs)
-        ry1 = int(gy - mgs)
+        return img
 
-        rx2 = int(gx + mgs)
-        ry2 = int(gy + mgs)
+    def _edges(self, img: Image) -> Image:
+        # Canny's algorithm
+        lo_thresh = 50
+        hi_thresh = 250
+        filter_size = 3
 
-        cv2.rectangle(img, (rx1, ry1), (rx2, ry2), (0, 255, 0), 3)
+        img = cv2.Canny(
+            img,
+            lo_thresh,
+            hi_thresh,
+            apertureSize=filter_size,
+            L2gradient=True
+        )
 
-        return preprocessed, edges, lines, img, guess
+        # Gaussian blur
+        blur_size = 3
 
-    return guess
+        img = cv2.GaussianBlur(
+            img,
+            (blur_size, blur_size),
+            0
+        )
+
+        return img
+
+    def _lines(self, img: Image) -> List[Line]:
+        # Hough transform
+        rho = 1
+        theta = np.pi / 180
+        thresh = 10
+        min_line_length = 15
+        max_line_gap = 5
+
+        lines = cv2.HoughLinesP(
+            img,
+            rho,
+            theta,
+            thresh,
+            minLineLength=min_line_length,
+            maxLineGap=max_line_gap
+        )
+
+        # Get and filter end points
+        x_thresh = 35
+        y_thresh = 20
+
+        pts = []
+
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+
+            if abs(x1 - x2) > x_thresh and abs(y1 - y2) > y_thresh:
+                pts.append(((x1, y1), (x2, y2)))
+
+        return pts
+
+    def _intersections(self, lines: List[Line]) -> List[Point]:
+        inters = []
+
+        def det(a, b):
+            return a[0] * b[1] - a[1] * b[0]
+
+        for i, l1 in enumerate(lines):
+            for l2 in lines[i + 1:]:
+                if not l1 == l2:
+                    x_diff = (l1[0][0] - l1[1][0], l2[0][0] - l2[1][0])
+                    y_diff = (l1[0][1] - l1[1][1], l2[0][1] - l2[1][1])
+
+                    div = det(x_diff, y_diff)
+
+                    if div == 0:
+                        continue
+
+                    d = (det(*l1), det(*l2))
+
+                    x = det(d, x_diff) / div
+                    y = det(d, y_diff) / div
+
+                    inters.append((x, y))
+
+        return inters
+
+    # Abstract interface
+
+    def detect(self, img):
+        """
+        This implementation is largely inspired from:
+            - https://github.com/SZanlongo/vanishing-point-detection
+        """
+
+        # Color convention
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+        # Image dimensions
+        h, w, _ = img.shape
+
+        # Grid dimensions
+        grid_size = min(h, w) // 5
+
+        rows = (h // grid_size) + 1
+        cols = (w // grid_size) + 1
+
+        # Initialize guess (cell with most intersections)
+        max_inter = 0
+        guess = (0.0, 0.0)
+
+        # Process
+        preprocessed = self._preprocess(img)
+        edges = self._edges(preprocessed)
+        lines = self._lines(edges)
+        intersections = self._intersections(lines)
+
+        # Output
+        if self.export:
+            vp = img.copy()
+
+        # Find best cell
+        for i, j in product(range(cols), range(rows)):
+            left = i * grid_size
+            right = (i + 1) * grid_size
+            bottom = j * grid_size
+            top = (j + 1) * grid_size
+
+            if self.export:
+                cv2.rectangle(vp, (left, bottom), (right, top), (0, 0, 255), 2)
+
+            n_inter = 0
+
+            for x, y in intersections:
+                if left < x < right and bottom < y < top:
+                    n_inter += 1
+
+            if n_inter > max_inter:
+                max_inter = n_inter
+                guess = ((left + right) / 2, (bottom + top) / 2)
+
+        if self.export:
+            # Draw lines
+            img_lines = img.copy()
+
+            for p1, p2 in lines:
+                cv2.line(img_lines, p1, p2, (0, 0, 255), 2)
+
+            # Draw best cell
+            gx, gy = guess
+            mgs = grid_size / 2
+
+            rx1 = int(gx - mgs)
+            ry1 = int(gy - mgs)
+
+            rx2 = int(gx + mgs)
+            ry2 = int(gy + mgs)
+
+            cv2.rectangle(vp, (rx1, ry1), (rx2, ry2), (0, 255, 0), 3)
+
+            return guess, [preprocessed, edges, img_lines, vp]
+
+        return guess
 
 
 ########
@@ -205,27 +255,27 @@ def vanishing_point(img: np.array, export: bool = False) -> Point:
 ########
 
 def main(
+    method_id: str = 'classic',
     img_pth: str = 'image.png',
     export_pth: str = 'analysis/'
 ):
+    # Load method
+    methods = {
+        'classic': VPClassic
+    }
+
+    method = methods.get(method_id)(export=True)
+
     # Open image
-    img = Image.open(img_pth)
+    img = PImage.open(img_pth)
     img = np.array(img)
 
     print(f'Image dimensions: {img.shape}')
 
     # Get results
-    preprocessed, edges, lines, vp, guess = vanishing_point(img, export=True)
-
-    # Draw lines
-    img_lines = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-
-    for p1, p2 in lines:
-        cv2.line(img_lines, p1, p2, (0, 0, 255), 2)
+    guess, exports = method.detect(img)
 
     # Export results
-    exports = [preprocessed, edges, img_lines, vp]
-
     os.makedirs(os.path.dirname(export_pth), exist_ok=True)
 
     for i, export in enumerate(exports):
@@ -243,6 +293,14 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         description='Analysis of an image.'
+    )
+
+    parser.add_argument(
+        '-m',
+        '--method',
+        type=str,
+        default='classic',
+        help='method to use'
     )
 
     parser.add_argument(
@@ -264,6 +322,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(
+        method_id=args.method,
         img_pth=args.image,
         export_pth=args.export
     )
