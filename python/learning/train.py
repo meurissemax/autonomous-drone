@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 """
-Implementation of the training procedure of the deep
-learning models.
+Implementation of the training procedure of the deep learning models.
 """
 
 ###########
@@ -20,8 +19,8 @@ from torch.optim import Adam, Optimizer
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from dataset import IndoorDataset
-from models import DenseNet161
+from datasets import ClassDataset, ImageDataset
+from models import DenseNet161, UNet
 
 
 #############
@@ -64,11 +63,13 @@ def train_epoch(
 def main(
     outputs_pth: str = 'outputs/',
     criterion_id: str = 'mse',
+    dataset_id: str = 'class',
     train_pth: str = 'train.json',
     augment: bool = False,
     batch_size: int = 32,
     num_workers: int = 0,
     model_id: str = 'densenet161',
+    out_channels: int = 2,
     num_epochs: int = 20
 ):
     # Device
@@ -87,7 +88,8 @@ def main(
 
     # Criterion and target dtype
     criterions = {
-        'mse': (nn.MSELoss(), torch.float)
+        'mse': (nn.MSELoss(), torch.float),
+        'nll': (nn.NLLLoss(), torch.long)
     }
 
     criterion, dtype = criterions.get(criterion_id)
@@ -95,24 +97,29 @@ def main(
     # Data set and data loader
     print('Loading data set...')
 
-    trainset = IndoorDataset(train_pth, model_id, augment, dtype)
+    datasets = {
+        'class': ClassDataset,
+        'image': ImageDataset
+    }
+
+    trainset = datasets.get(dataset_id)(train_pth, model_id, augment, dtype)
     loader = DataLoader(
         trainset,
         shuffle=True,
         batch_size=batch_size,
         num_workers=num_workers,
-        pin_memory=device == 'cuda'
+        pin_memory=torch.cuda.is_available()
     )
 
     # Model
     models = {
-        'densenet161': DenseNet161
+        'densenet161': DenseNet161,
+        'unet': UNet
     }
 
-    inpt, trgt = trainset[0]
+    inpt, _ = trainset[0]
 
     in_channels = inpt.size()[0]
-    out_channels = trgt.size()[0]
 
     model = models.get(model_id)(in_channels, out_channels)
     model = model.to(device)
@@ -174,8 +181,17 @@ if __name__ == '__main__':
         '--criterion',
         type=str,
         default='mse',
-        choices=['mse'],
+        choices=['mse', 'nll'],
         help='criterion to use'
+    )
+
+    parser.add_argument(
+        '-d',
+        '--dataset',
+        type=str,
+        default='class',
+        choices=['class', 'image'],
+        help='data set to use'
     )
 
     parser.add_argument(
@@ -215,8 +231,16 @@ if __name__ == '__main__':
         '--model',
         type=str,
         default='densenet161',
-        choices=['densenet161'],
+        choices=['densenet161', 'unet'],
         help='model to train'
+    )
+
+    parser.add_argument(
+        '-n',
+        '--channels',
+        type=int,
+        default=2,
+        help='number output channels'
     )
 
     parser.add_argument(
@@ -232,10 +256,12 @@ if __name__ == '__main__':
     main(
         outputs_pth=args.outputs,
         criterion_id=args.criterion,
+        dataset_id=args.dataset,
         train_pth=args.train,
         augment=args.augment,
         batch_size=args.batch,
         num_workers=args.workers,
         model_id=args.model,
+        out_channels=args.channels,
         num_epochs=args.epochs
     )

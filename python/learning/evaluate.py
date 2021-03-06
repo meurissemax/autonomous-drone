@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 """
-Implementation of the evaluation procedure of the deep
-learning models.
+Implementation of the evaluation procedure of the deep learning models.
 """
 
 ###########
@@ -19,8 +18,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from typing import Iterable
 
-from dataset import IndoorDataset
-from models import DenseNet161
+from datasets import ClassDataset, ImageDataset
+from models import DenseNet161, UNet
 
 
 ##########
@@ -34,17 +33,45 @@ Tensors = Iterable[torch.Tensor]
 # Functions #
 #############
 
+# Utilities
+
+def _to_class(t: Tensors) -> Tensors:
+    return torch.argmax(t, dim=1)
+
+
+def _tensorify(t: torch.Tensor) -> torch.Tensor:
+    return torch.tensor(t.size())
+
+
+def _flatten(t: Tensors) -> Tensors:
+    n = len(list(t.size()))
+
+    return torch.flatten(torch.argmax(t, dim=1)) if n > 1 else t
+
+
+# Evaluation
+
 def pr_eval(outputs: Tensors, targets: Tensors) -> list:
     """
     Compute precision and recall evaluation metrics.
     """
 
-    def adapt(t: Tensors):
-        return torch.flatten(torch.argmax(t, dim=1))
+    # Transform probabilities to class
+    transform = torch.equal(
+        _tensorify(outputs),
+        _tensorify(targets)
+    )
 
-    outputs = adapt(outputs)
-    targets = adapt(targets)
+    outputs = _to_class(outputs)
 
+    if transform:
+        targets = _to_class(targets)
+
+    # Flatten
+    outputs = _flatten(outputs)
+    targets = _flatten(targets)
+
+    # Evaluate
     args = {
         'y_true': targets,
         'y_pred': outputs,
@@ -64,10 +91,12 @@ def pr_eval(outputs: Tensors, targets: Tensors) -> list:
 
 def main(
     outputs_pth: str = 'outputs/',
+    dataset_id: str = 'class',
     test_pth: str = 'test.json',
     batch_size: int = 32,
     num_workers: int = 0,
     model_id: str = 'densenet161',
+    out_channels: int = 2,
     weights_pth: str = 'weights.pth',
     metric_id: str = 'pr'
 ):
@@ -84,23 +113,28 @@ def main(
     # Data set and data loader
     print('Loading data set...')
 
-    testset = IndoorDataset(test_pth, model_id)
+    datasets = {
+        'class': ClassDataset,
+        'image': ImageDataset
+    }
+
+    testset = datasets.get(dataset_id)(test_pth, model_id)
     loader = DataLoader(
         testset,
         batch_size=batch_size,
         num_workers=num_workers,
-        pin_memory=device == 'cuda'
+        pin_memory=torch.cuda.is_available()
     )
 
     # Model
     models = {
-        'densenet161': DenseNet161
+        'densenet161': DenseNet161,
+        'unet': UNet
     }
 
-    inpt, trgt = testset[0]
+    inpt, _ = testset[0]
 
     in_channels = inpt.size()[0]
-    out_channels = trgt.size()[0]
 
     model = models.get(model_id)(in_channels, out_channels)
     model = model.to(device)
@@ -159,6 +193,15 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        '-d',
+        '--dataset',
+        type=str,
+        default='class',
+        choices=['class', 'image'],
+        help='data set to use'
+    )
+
+    parser.add_argument(
         '-t',
         '--test',
         type=str,
@@ -187,8 +230,16 @@ if __name__ == '__main__':
         '--model',
         type=str,
         default='densenet161',
-        choices=['densenet161'],
+        choices=['densenet161', 'unet'],
         help='model to evaluate'
+    )
+
+    parser.add_argument(
+        '-c',
+        '--channels',
+        type=int,
+        default=2,
+        help='number output channels'
     )
 
     parser.add_argument(
@@ -212,10 +263,12 @@ if __name__ == '__main__':
 
     main(
         outputs_pth=args.outputs,
+        dataset_id=args.dataset,
         test_pth=args.test,
         batch_size=args.batch,
         num_workers=args.workers,
         model_id=args.model,
+        out_channels=args.channels,
         weights_pth=args.weights,
         metric_id=args.metric
     )
