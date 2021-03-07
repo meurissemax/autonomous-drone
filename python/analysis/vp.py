@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Implementation of analysis methods based on environment information.
+Implementation of vanishing point detection methods.
 """
 
 ###########
@@ -31,8 +31,6 @@ Intermediate = List[Image]
 ###########
 # Classes #
 ###########
-
-# Vanishing point detection
 
 class VPDetector(ABC):
     """
@@ -257,7 +255,7 @@ class VPClassic(VPDetector):
 def main(
     method_id: str = 'classic',
     img_pth: str = 'image.png',
-    export_pth: str = 'analysis/'
+    export_pth: str = 'vp-results/'
 ):
     # Load method
     methods = {
@@ -292,7 +290,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Analysis of an image.'
+        description='Vanishing point detection in an image.'
     )
 
     parser.add_argument(
