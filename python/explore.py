@@ -2,6 +2,8 @@
 
 """
 Implementation of the exploration process of the drone.
+
+This process allows the drone to be controlled manually.
 """
 
 ###########
@@ -15,25 +17,12 @@ from controllers import (
     TelloEDU
 )
 
-from environment import Environment
-
 
 #############
 # Functions #
 #############
 
-def explore(
-    env: Environment,
-    controller: Controller,
-    show: bool = False
-):
-    # Determine shortest path to objective
-    path = env.path()
-
-    # Show the path
-    if show:
-        env.render(path=path, what=['pos', 'obj'])
-
+def explore(controller: Controller):
     # Initialize the drone
     controller.arm()
     controller.takeoff()
@@ -45,23 +34,14 @@ def explore(
     controller.land()
     controller.disarm()
 
-    # Keep the environment
-    if show:
-        env.keep()
-
 
 ########
 # Main #
 ########
 
 def main(
-    env_pth: str = 'indoor-corridor.txt',
-    controller_id: str = 'airsim',
-    env_show: bool = False
+    controller_id: str = 'airsim'
 ):
-    # Environment
-    env = Environment(env_pth)
-
     # Controller
     controllers = {
         'airsim': AirSimDrone,
@@ -72,7 +52,7 @@ def main(
     controller = controllers.get(controller_id)()
 
     # Exploration
-    explore(env, controller, env_show)
+    explore(controller)
 
 
 if __name__ == '__main__':
@@ -80,14 +60,6 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         description='Exploration process of the drone.'
-    )
-
-    parser.add_argument(
-        '-e',
-        '--environment',
-        type=str,
-        default='indoor-corridor.txt',
-        help='path to environment file'
     )
 
     parser.add_argument(
@@ -99,18 +71,8 @@ if __name__ == '__main__':
         help='choice of the controller to use'
     )
 
-    parser.add_argument(
-        '-s',
-        '--show',
-        action='store_true',
-        default=False,
-        help='show the environment representation'
-    )
-
     args = parser.parse_args()
 
     main(
-        env_pth=args.environment,
-        controller_id=args.controller,
-        env_show=args.show
+        controller_id=args.controller
     )
