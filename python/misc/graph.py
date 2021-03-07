@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 """
-Implementation of functions to generate graphs showing
-some data.
+Implementation of functions to generate graphs showing some data.
 """
 
 ###########

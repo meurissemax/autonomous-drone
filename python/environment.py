@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 """
-Implementation of tools to represent an environment
-and interact with it.
+Implementation of tools to represent an environment and interact with it.
 """
 
 ###########
@@ -67,8 +66,7 @@ FULL_BATTERY_DISTANCE = 200
 
 class PathFinding(AStar):
     """
-    Implementation of utility functions for the A* path planning
-    algorithm.
+    Implementation of utility functions for the A* path planning algorithm.
     """
 
     def __init__(self, grid):
@@ -102,14 +100,12 @@ class PathFinding(AStar):
 
 class Environment:
     """
-    Implementation of the representation of the
-    environment.
+    Implementation of the representation of the environment.
 
-    An environment representation must be stored in a text
-    file (.txt). Its shape has to be a grid (m * n elements).
+    An environment representation must be stored in a text file (.txt). Its
+    shape has to be a grid (m * n elements).
 
-    Features of the environment are represented by a serie
-    of characters, i.e.
+    Features of the environment are represented by a serie of characters, i.e.
         . : a free position
         # : a non free position
         [N, S, W, E] : position of the agent, represented by a letter
@@ -169,8 +165,7 @@ class Environment:
 
     def load(self, env_pth: str):
         """
-        Load an environment representation and save all information
-        about it.
+        Load an environment representation and save all information about it.
         """
 
         # Initialize
@@ -319,8 +314,8 @@ class Environment:
         action: Action
     ) -> Tuple[Position, Orientation]:
         """
-        Get the new position and orientation of the agent if it executes
-        a certain action.
+        Get the new position and orientation of the agent if it executes a
+        certain action.
         """
 
         transition = self.t_move.get(action).get(omega)
@@ -338,8 +333,7 @@ class Environment:
 
     def move(self, action: Action, times: int = 1):
         """
-        Update the position and orientation of the agent based on
-        an action.
+        Update the position and orientation of the agent based on an action.
         """
 
         for _ in range(times):
@@ -347,8 +341,8 @@ class Environment:
 
     def update(self, p: Position, action: Action):
         """
-        Update the position and orientation of the agent based on
-        new position and an action.
+        Update the position and orientation of the agent based on new position
+        and an action.
         """
 
         # Update position
@@ -369,11 +363,11 @@ class Environment:
         history: list = []
     ) -> Path:
         """
-        Get the shortest path, represented by a serie of positions, to go
-        from a start point to an end point.
+        Get the shortest path, represented by a serie of positions, to go from
+        a start point to an end point.
 
-        The path can take into account a battery level if the latter
-        is given as argument.
+        The path can take into account a battery level if the latter is given
+        as argument.
         """
 
         a = start if start is not None else self.pos
@@ -410,8 +404,8 @@ class Environment:
 
     def path_to_seq(self, path: Path) -> List[Action]:
         """
-        Translate a path to the corresponding sequence of actions, e.g.
-        move forward, move forward, turn left, move forward, etc.
+        Translate a path to the corresponding sequence of actions, e.g. move
+        forward, move forward, turn left, move forward, etc.
         """
 
         # Initial position and orientation
@@ -467,9 +461,9 @@ class Environment:
         limit: int = 5
     ) -> List[Tuple[Action, int]]:
         """
-        Group a serie of actions into small group of same actions in order
-        to optimize drone navigation, e.g. move forward, move forward will
-        be grouped into (move forward, 2).
+        Group a serie of actions into small group of same actions in order to
+        optimize drone navigation, e.g. move forward, move forward will be
+        grouped into (move forward, 2).
 
         A limited number of same consecutive actions can be grouped into a
         single group.
@@ -524,8 +518,8 @@ class Environment:
         actions: List[Action]
     ) -> List[Keypoint]:
         """
-        Isolate, from a path and its corresponding serie of actions, the
-        key points and their corresponding positions.
+        Isolate, from a path and its corresponding serie of actions, the key
+        points and their corresponding positions.
         """
 
         # Get key point positions of the path
@@ -568,8 +562,8 @@ class Environment:
         what: list = []
     ):
         """
-        Generates a rendering of the environment. It can then be shown
-        or saved.
+        Generates a rendering of the environment. It can then be shown or
+        saved.
         """
 
         # Grid
@@ -623,8 +617,8 @@ class Environment:
 
     def keep(self):
         """
-        Keep the environment representation opened when showing it. Must
-        be called once at the end of a script that shows the environment.
+        Keep the environment representation opened when showing it. Must be
+        called once at the end of a script that shows the environment.
         """
 
         plt.show()

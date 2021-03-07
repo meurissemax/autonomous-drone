@@ -1,9 +1,9 @@
 """
 Implementation of the data sets used by the deep learning models.
 
-Each data set contains input images and associated targets.
-Targets depend on the data set (a class for the ClassDataset and
-an image for the ImageDataset).
+Each data set contains input images and associated targets. Targets depend
+on the data set (a class for the ClassDataset and an image for the
+ImageDataset).
 """
 
 ###########
@@ -28,11 +28,10 @@ from typing import Tuple
 
 class ClassDataset(Dataset):
     """
-    Data set that contains input images and associated target
-    classes.
+    Data set that contains input images and associated target classes.
 
-    The JSON data file has to have the following format
-    (example for a 4 classes classification problem):
+    The JSON data file has to have the following format (example for a
+    4 classes classification problem):
 
     [
         {
@@ -42,8 +41,8 @@ class ClassDataset(Dataset):
         ...
     ]
 
-    Each pair is composed of the path to the image and the
-    target whose format is the target tensor used by PyTorch.
+    Each pair is composed of the path to the image and the target whose
+    format is the target tensor used by PyTorch.
     """
 
     def __init__(
@@ -132,8 +131,7 @@ class ClassDataset(Dataset):
 
 class ImageDataset(Dataset):
     """
-    Data set that contains input images and associated target
-    images.
+    Data set that contains input images and associated target images.
 
     The JSON data file has to have the following format:
 
@@ -145,8 +143,8 @@ class ImageDataset(Dataset):
         ...
     ]
 
-    Each pair is composed of the path to the input image and
-    the path to the target image.
+    Each pair is composed of the path to the input image and the path to the
+    target image.
     """
 
     def __init__(

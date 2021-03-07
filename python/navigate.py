@@ -67,8 +67,7 @@ class Navigation(ABC):
 
 class Naive(Navigation):
     """
-    Naive navigation algorithm based solely on
-    A* path finding.
+    Naive navigation algorithm based solely on A* path finding.
     """
 
     def __init__(self, env, controller, show=False):
@@ -195,8 +194,7 @@ class Vision(Navigation):
 
 class Vanishing(Navigation):
     """
-    Navigation algorithm based on the vanishing point
-    detection.
+    Navigation algorithm based on the vanishing point detection.
     """
 
     def __init__(self, env, controller, show=False):

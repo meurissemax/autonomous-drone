@@ -70,8 +70,8 @@ class DenseNet161(nn.Module):
     """
     Implementation of the modified version of model DenseNet161.
 
-    Last classification layer has been replaced by 3 convolution
-    layers followed by 1 fully connected one.
+    Last classification layer has been replaced by 3 convolution layers
+    followed by 1 fully connected one.
 
     This model is used to predict class associated to input image.
 
@@ -123,7 +123,8 @@ class UNet(nn.Module):
 
     This model is used to predict mask associated to input image.
 
-    Inspired from: https://github.com/francois-rozet/adopptrs/.
+    Inspired from:
+        - https://github.com/francois-rozet/adopptrs/
     """
 
     def __init__(self, in_channels: int, out_channels: int):

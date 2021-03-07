@@ -41,11 +41,11 @@ class VPDetector(ABC):
 
     def __init__(self, export: bool = False):
         """
-        When the 'export' flag is True, the method returns the
-        vanishing point and all intermediate results.
+        When the 'export' flag is True, the method returns the vanishing point
+        and all intermediate results.
 
-        When the 'export' flag is False, the method only returns
-        the vanishing point.
+        When the 'export' flag is False, the method only returns the vanishing
+        point.
         """
 
         super().__init__()
@@ -55,8 +55,8 @@ class VPDetector(ABC):
     @abstractmethod
     def detect(img: Image) -> Union[Point, Tuple[Point, Intermediate]]:
         """
-        Return the coordinates, in pixels, of the vanishing point
-        of the image (and eventually all intermediate results).
+        Return the coordinates, in pixels, of the vanishing point of the image
+        (and eventually all intermediate results).
         """
 
         pass
@@ -64,8 +64,8 @@ class VPDetector(ABC):
 
 class VPClassic(VPDetector):
     """
-    Implementation of a vanishing point detector based on
-    classic methods (Canny's algorithm and Hough transform).
+    Implementation of a vanishing point detector based on classic methods
+    (Canny's algorithm and Hough transform).
     """
 
     def __init__(self, export=False):
@@ -255,7 +255,7 @@ class VPClassic(VPDetector):
 def main(
     method_id: str = 'classic',
     img_pth: str = 'image.png',
-    export_pth: str = 'vp-results/'
+    export_pth: str = 'results/'
 ):
     # Load method
     methods = {
@@ -298,6 +298,7 @@ if __name__ == '__main__':
         '--method',
         type=str,
         default='classic',
+        choices=['classic'],
         help='method to use'
     )
 
@@ -313,7 +314,7 @@ if __name__ == '__main__':
         '-e',
         '--export',
         type=str,
-        default='analysis/',
+        default='results/',
         help='path to the folder for exported results'
     )
 

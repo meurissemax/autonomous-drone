@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Implementation of a tool used to horizontally flip images
-# (and save them as new images in new folders).
+# Implementation of a tool used to horizontally flip images (and save them as
+# new images in new folders).
 #
 # Usage: bash hflip.sh <dir_name>
 

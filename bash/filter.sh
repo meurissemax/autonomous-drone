@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Implementation of a tool used to delete images. The script
-# keep one image over 'keep' and delete the others.
+# Implementation of a tool used to delete images. The script keep one image
+# over 'keep' and delete the others.
 #
 # Usage: bash filter.sh <dir_name> <keep>
 

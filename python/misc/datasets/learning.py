@@ -1,20 +1,17 @@
 #!/usr/bin/env python
 
 """
-Implementation of tools used to generate a data set
-(annotate images and split intro training and testing
-sets).
+Implementation of tools used to generate data sets (annotate images and split
+intro training and testing sets) for Deep Learning methods.
 
-Input images can be annotated using either target values
-associated to them (using intervals) or target images.
+Input images can be annotated using either target values associated to them
+(using intervals) or target images.
 
-In case of intervals, they must be defined in the
-"General variables" section.
+In case of intervals, they must be defined in the "General variables" section.
 
-In case of target images, input images and target images
-must be in separate folders and ordered such that the first
-image in the input folder is associated to the first image
-in the target folder, etc.
+In case of target images, input images and target images must be in separate
+folders and ordered such that the first image in the input folder is associated
+to the first image in the target folder, etc.
 """
 
 ###########
@@ -42,19 +39,17 @@ Dataset = List[Dict]
 #####################
 
 """
-Intervals used to annotate images. Each interval is a tuple
-composed of
+Intervals used to annotate images. Each interval is a tuple composed of
     - target (in format directly useable by PyTorch);
     - ID lower bound;
     - ID upper bound.
 
-Each interval is defined by [lower_bound, upper_bound]. The
-following example will annotate each image whose ID is in
-[0, 100] by [1, 0] and each image whose ID is in [101, 200]
-by [0, 1].
+Each interval is defined by [lower_bound, upper_bound]. The following example
+will annotate each image whose ID is in [0, 100] by [1, 0] and each image whose
+ID is in [101, 200] by [0, 1].
 
-The ID of an image must be at the end of the image name,
-separed by an underscore, e.g. img_1.png.
+The ID of an image must be at the end of the image name, separed by an
+underscore, e.g. img_1.png.
 """
 
 INTERVALS = [
@@ -86,8 +81,7 @@ def _extract(img_name: str) -> int:
 
 def _list(imgs_pth: str) -> List[Tuple[str, int]]:
     """
-    Construct a list of image paths with associated ID
-    based on images path.
+    Construct a list of image paths with associated ID based on images path.
     """
 
     # Initialize (image, ID) list
@@ -209,7 +203,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Data set generation tools.'
+        description='Data set generation tools for Deep Learning methods.'
     )
 
     parser.add_argument(
