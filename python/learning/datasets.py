@@ -10,6 +10,7 @@ ImageDataset).
 # Imports #
 ###########
 
+import cv2
 import io
 import json
 import numpy as np
@@ -20,6 +21,44 @@ from PIL import Image, ImageFilter
 from torch.utils.data import Dataset
 from tqdm import tqdm
 from typing import Tuple
+
+
+##########
+# Typing #
+##########
+
+PILImage = Image.Image
+
+
+#############
+# Functions #
+#############
+
+def to_edges(img: PILImage) -> PILImage:
+    """
+    Extract the edges from an image.
+    """
+
+    # Convert to numpy array
+    img = np.array(img)
+
+    # Extract edges
+    lo_thresh = 50
+    hi_thresh = 250
+    filter_size = 3
+
+    img = cv2.Canny(
+        img,
+        lo_thresh,
+        hi_thresh,
+        apertureSize=filter_size,
+        L2gradient=True
+    )
+
+    # Convert to PIL Image
+    img = Image.fromarray(img)
+
+    return img
 
 
 ###########
@@ -50,7 +89,8 @@ class ClassDataset(Dataset):
         json_pth: str,
         modelname: str = '',
         augment: bool = False,
-        dtype: torch.dtype = torch.float
+        dtype: torch.dtype = torch.float,
+        edges: bool = False
     ):
         super().__init__()
 
@@ -89,6 +129,9 @@ class ClassDataset(Dataset):
         # Target data type
         self.dtype = dtype
 
+        # Edges
+        self.edges = edges
+
         # Get data
         with open(json_pth, 'r') as json_file:
             pairs = json.load(json_file)
@@ -115,7 +158,9 @@ class ClassDataset(Dataset):
         # Image
         img = Image.open(img)
 
-        if self.augment is not None:
+        if self.edges:
+            img = to_edges(img)
+        elif self.augment is not None:
             img = self.augment(img)
 
         img = self.process(img)
@@ -150,9 +195,10 @@ class ImageDataset(Dataset):
     def __init__(
         self,
         json_pth: str,
-        _modelname: str = '',
+        modelname: str = '',
         augment: bool = False,
-        dtype: torch.dtype = torch.long
+        dtype: torch.dtype = torch.long,
+        edges: bool = False
     ):
         super().__init__()
 
@@ -179,6 +225,9 @@ class ImageDataset(Dataset):
 
         # Target data type
         self.dtype = dtype
+
+        # Edges
+        self.edges = edges
 
         # Get data
         with open(json_pth, 'r') as json_file:
@@ -207,7 +256,9 @@ class ImageDataset(Dataset):
         # Input
         inpt = Image.open(inpt)
 
-        if self.augment is not None:
+        if self.edges:
+            img = to_edges(img)
+        elif self.augment is not None:
             inpt = self.augment(inpt)
 
         inpt = self.process(inpt)

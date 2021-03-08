@@ -17,6 +17,7 @@ import torchvision.transforms as transforms
 
 from PIL import Image
 
+from datasets import to_edges
 from models import DenseNet161, UNet
 
 
@@ -26,6 +27,7 @@ from models import DenseNet161, UNet
 
 def main(
     input_pth: str = 'input.png',
+    edges: bool = False,
     model_id: str = 'densenet161',
     out_channels: int = 2,
     weights_pth: str = 'weights.pth',
@@ -40,6 +42,10 @@ def main(
 
     # Input
     inpt = Image.open(input_pth)
+
+    if edges:
+        inpt = to_edges(inpt)
+
     inpt = transforms.ToTensor()(inpt)
     inpt = inpt.unsqueeze(0)
 
@@ -104,6 +110,14 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        '-e',
+        '--edges',
+        default=False,
+        action='store_true',
+        help='flag to work with edges'
+    )
+
+    parser.add_argument(
         '-m',
         '--model',
         type=str,
@@ -140,6 +154,7 @@ if __name__ == '__main__':
 
     main(
         input_pth=args.input,
+        edges=args.edges,
         model_id=args.model,
         out_channels=args.channels,
         weights_pth=args.weights,

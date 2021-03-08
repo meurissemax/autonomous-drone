@@ -72,10 +72,11 @@ def main(
     criterion_id: str = 'mse',
     dataset_id: str = 'class',
     train_pth: str = 'train.json',
+    model_id: str = 'densenet161',
     augment: bool = False,
+    edges: bool = False,
     batch_size: int = 32,
     num_workers: int = 0,
-    model_id: str = 'densenet161',
     out_channels: int = 2,
     num_epochs: int = 20
 ):
@@ -109,7 +110,14 @@ def main(
         'image': ImageDataset
     }
 
-    trainset = datasets.get(dataset_id)(train_pth, model_id, augment, dtype)
+    trainset = datasets.get(dataset_id)(
+        json_pth=train_pth,
+        modelname=model_id,
+        augment=augment,
+        dtype=dtype,
+        edges=edges
+    )
+
     loader = DataLoader(
         trainset,
         shuffle=True,
@@ -171,7 +179,7 @@ def main(
             torch.save(model.state_dict(), model_name)
 
     # Plot
-    plt.plot(epochs, mean_losses)
+    plt.plot(range(1, num_epochs + 1), mean_losses)
 
     plt.xlabel('Epoch')
     plt.ylabel(ylabel)
@@ -222,11 +230,28 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        '-m',
+        '--model',
+        type=str,
+        default='densenet161',
+        choices=['densenet161', 'unet'],
+        help='model to train'
+    )
+
+    parser.add_argument(
         '-a',
         '--augment',
         default=False,
         action='store_true',
         help='flag to enable data augmentation'
+    )
+
+    parser.add_argument(
+        '-e',
+        '--edges',
+        default=False,
+        action='store_true',
+        help='flag to work with edges'
     )
 
     parser.add_argument(
@@ -246,15 +271,6 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '-m',
-        '--model',
-        type=str,
-        default='densenet161',
-        choices=['densenet161', 'unet'],
-        help='model to train'
-    )
-
-    parser.add_argument(
         '-n',
         '--channels',
         type=int,
@@ -263,7 +279,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '-e',
+        '-p',
         '--epochs',
         type=int,
         default=20,
@@ -277,10 +293,11 @@ if __name__ == '__main__':
         criterion_id=args.criterion,
         dataset_id=args.dataset,
         train_pth=args.train,
+        model_id=args.model,
         augment=args.augment,
+        edges=args.edges,
         batch_size=args.batch,
         num_workers=args.workers,
-        model_id=args.model,
         out_channels=args.channels,
         num_epochs=args.epochs
     )

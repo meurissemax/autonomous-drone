@@ -76,11 +76,9 @@ class DenseNet161(nn.Module):
     This model is used to predict class associated to input image.
 
     Input images must be in 320 x 180.
-
-    Note: the argument 'in_channels' is unused in this model.
     """
 
-    def __init__(self, _in_channels: int, out_channels: int):
+    def __init__(self, in_channels: int, out_channels: int):
         super().__init__()
 
         # Pre trained original DenseNet161
@@ -94,6 +92,8 @@ class DenseNet161(nn.Module):
         self.densenet161 = nn.Sequential(*list(self.densenet161.features))
 
         # New layers
+        self.first = Conv(in_channels, 3)
+
         self.conv1 = Conv(2208, 1024)
         self.conv2 = Conv(1024, 128, kernel_size=5)
         self.conv3 = Conv(128, 16)
@@ -104,6 +104,8 @@ class DenseNet161(nn.Module):
         )
 
     def forward(self, x: Tensors) -> Tensors:
+        x = self.first(x)
+
         x = self.densenet161(x)
 
         x = self.conv1(x)

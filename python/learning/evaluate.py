@@ -93,9 +93,10 @@ def main(
     outputs_pth: str = 'outputs/',
     dataset_id: str = 'class',
     test_pth: str = 'test.json',
+    model_id: str = 'densenet161',
+    edges: bool = False,
     batch_size: int = 32,
     num_workers: int = 0,
-    model_id: str = 'densenet161',
     out_channels: int = 2,
     weights_pth: str = 'weights.pth',
     metric_id: str = 'pr'
@@ -118,7 +119,12 @@ def main(
         'image': ImageDataset
     }
 
-    testset = datasets.get(dataset_id)(test_pth, model_id)
+    testset = datasets.get(dataset_id)(
+        json_pth=test_pth,
+        modelname=model_id,
+        edges=edges
+    )
+
     loader = DataLoader(
         testset,
         batch_size=batch_size,
@@ -210,6 +216,23 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        '-m',
+        '--model',
+        type=str,
+        default='densenet161',
+        choices=['densenet161', 'unet'],
+        help='model to evaluate'
+    )
+
+    parser.add_argument(
+        '-e',
+        '--edges',
+        default=False,
+        action='store_true',
+        help='flag to work with edges'
+    )
+
+    parser.add_argument(
         '-b',
         '--batch',
         type=int,
@@ -226,15 +249,6 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '-m',
-        '--model',
-        type=str,
-        default='densenet161',
-        choices=['densenet161', 'unet'],
-        help='model to evaluate'
-    )
-
-    parser.add_argument(
         '-c',
         '--channels',
         type=int,
@@ -243,7 +257,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '-e',
+        '-i',
         '--weights',
         type=str,
         default='weights.pth',
@@ -265,9 +279,10 @@ if __name__ == '__main__':
         outputs_pth=args.outputs,
         dataset_id=args.dataset,
         test_pth=args.test,
+        model_id=args.model,
+        edges=args.edges,
         batch_size=args.batch,
         num_workers=args.workers,
-        model_id=args.model,
         out_channels=args.channels,
         weights_pth=args.weights,
         metric_id=args.metric
