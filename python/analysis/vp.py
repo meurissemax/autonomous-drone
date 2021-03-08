@@ -8,13 +8,17 @@ Implementation of vanishing point detection methods.
 # Imports #
 ###########
 
+import csv
 import cv2
+import json
+import math
 import numpy as np
 import os
 
 from abc import ABC, abstractmethod
 from itertools import product
 from PIL import Image as PImage
+from tqdm import tqdm
 from typing import List, Tuple, Union
 
 
@@ -248,80 +252,165 @@ class VPClassic(VPDetector):
         return guess
 
 
+#############
+# Functions #
+#############
+
+def evaluate(
+    methods: List[VPDetector],
+    json_pth: str,
+    threshold: int,
+    output_pth: str
+):
+    """
+    Evaluate a serie of vanishing point detectors by running them on some truth
+    images.
+    """
+
+    # Initialize
+    results = {}
+
+    for method in methods:
+        results[method.__name__] = []
+
+    # Load evaluation data
+    data = []
+
+    with open(json_pth, 'r') as json_file:
+        data = json.load(json_file)
+
+    # Evaluate methods on each image
+    for d in tqdm(data):
+        img = PImage.open(d['image'])
+        img = np.array(img)
+
+        for method in methods:
+            guess = method().detect(img)
+            truth = d['vp']
+
+            dist = math.dist(guess, truth)
+            result = 1 if dist < threshold else 0
+
+            results[method.__name__].append(result)
+
+    # Get the score of each method
+    for key, values in results.items():
+        results[key] = sum(values)
+
+    # Display and export results
+    print(results)
+
+    with open(output_pth, 'w', newline='') as f:
+        csv.writer(f).writerow(list(results.keys()))
+        csv.writer(f).writerow(list(results.values()))
+
+
 ########
 # Main #
 ########
 
 def main(
-    method_id: str = 'classic',
-    img_pth: str = 'image.png',
-    export_pth: str = 'results/'
+    method_id: str = None,
+    evaluation: bool = False,
+    inpt_pth: str = 'image.png',
+    outpt_pth: str = 'results/',
+    threshold: int = 15
 ):
-    # Load method
-    methods = {
-        'classic': VPClassic
-    }
+    # Method testing
+    if method_id is not None:
 
-    method = methods.get(method_id)(export=True)
+        # Load method
+        methods = {
+            'classic': VPClassic
+        }
 
-    # Open image
-    img = PImage.open(img_pth)
-    img = np.array(img)
+        method = methods.get(method_id)(export=True)
 
-    print(f'Image dimensions: {img.shape}')
+        # Open image
+        img = PImage.open(inpt_pth)
+        img = np.array(img)
 
-    # Get results
-    guess, exports = method.detect(img)
+        print(f'Image dimensions: {img.shape}')
 
-    # Export results
-    os.makedirs(os.path.dirname(export_pth), exist_ok=True)
+        # Get results
+        guess, exports = method.detect(img)
 
-    for i, export in enumerate(exports):
-        cv2.imwrite(
-            os.path.join(export_pth, f'{i}.png'),
-            export
-        )
+        # Export results
+        os.makedirs(os.path.dirname(outpt_pth), exist_ok=True)
 
-    # Display vanishing point guess
-    print(f'Vanishing point guess: {guess}')
+        for i, export in enumerate(exports):
+            cv2.imwrite(
+                os.path.join(outpt_pth, f'{i}.png'),
+                export
+            )
+
+        # Display vanishing point guess
+        print(f'Vanishing point guess: {guess}')
+
+    # Method evaluation
+    elif evaluation:
+
+        # List of methods
+        methods = [VPClassic]
+
+        # Evaluate
+        evaluate(methods, inpt_pth, threshold, outpt_pth)
 
 
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Vanishing point detection in an image.'
+        description='Test or evaluate vanishing point detectors.'
     )
 
     parser.add_argument(
         '-m',
         '--method',
         type=str,
-        default='classic',
-        choices=['classic'],
+        default=None,
+        choices=[None, 'classic'],
         help='method to use'
     )
 
     parser.add_argument(
-        '-i',
-        '--image',
-        type=str,
-        default='image.png',
-        help='path to the image file'
+        '-e',
+        '--evaluation',
+        action='store_true',
+        default=False,
+        help='Flag to evaluate or not the methods.'
     )
 
     parser.add_argument(
-        '-e',
-        '--export',
+        '-i',
+        '--input',
+        type=str,
+        default='image.png',
+        help='path to input file'
+    )
+
+    parser.add_argument(
+        '-o',
+        '--output',
         type=str,
         default='results/',
-        help='path to the folder for exported results'
+        help='path to output file or folder'
+    )
+
+    parser.add_argument(
+        '-t',
+        '--threshold',
+        type=int,
+        default=15,
+        help='threshold for method evaluation'
     )
 
     args = parser.parse_args()
 
     main(
         method_id=args.method,
-        img_pth=args.image,
-        export_pth=args.export
+        evaluation=args.evaluation,
+        inpt_pth=args.input,
+        outpt_pth=args.output,
+        threshold=args.threshold
     )
