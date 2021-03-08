@@ -8,18 +8,24 @@ Implementation of vanishing point detection methods.
 # Imports #
 ###########
 
-import csv
 import cv2
 import json
 import math
 import numpy as np
 import os
+import sys
 
 from abc import ABC, abstractmethod
 from itertools import product
 from PIL import Image as PImage
 from tqdm import tqdm
 from typing import List, Tuple, Union
+
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
+
+from misc.plots import plt  # noqa: E402
 
 
 ##########
@@ -300,9 +306,19 @@ def evaluate(
     # Display and export results
     print(results)
 
-    with open(output_pth, 'w', newline='') as f:
-        csv.writer(f).writerow(list(results.keys()))
-        csv.writer(f).writerow(list(results.values()))
+    x, y = list(results.keys()), list(results.values())
+
+    plt.bar(x, y)
+
+    plt.xlabel('Method')
+    plt.ylabel('Score')
+
+    plt.grid(False)
+    plt.yticks(range(0, len(data) + 1, int(len(data) / 5)))
+    plt.tick_params(axis='x', labelsize=10)
+
+    plt.savefig(output_pth)
+    plt.close()
 
 
 ########

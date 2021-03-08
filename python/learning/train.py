@@ -11,6 +11,7 @@ Implementation of the training procedure of the deep learning models.
 import csv
 import numpy as np
 import os
+import sys
 import torch
 import torch.nn as nn
 
@@ -21,6 +22,12 @@ from tqdm import tqdm
 
 from datasets import ClassDataset, ImageDataset
 from models import DenseNet161, UNet
+
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
+
+from misc.plots import plt  # noqa: E402
 
 
 #############
@@ -88,11 +95,11 @@ def main(
 
     # Criterion and target dtype
     criterions = {
-        'mse': (nn.MSELoss(), torch.float),
-        'nll': (nn.NLLLoss(), torch.long)
+        'mse': (nn.MSELoss(), torch.float, 'MSE Loss'),
+        'nll': (nn.NLLLoss(), torch.long, 'NLL Loss')
     }
 
-    criterion, dtype = criterions.get(criterion_id)
+    criterion, dtype, ylabel = criterions.get(criterion_id)
 
     # Data set and data loader
     print('Loading data set...')
@@ -140,11 +147,14 @@ def main(
 
     # Training
     epochs = range(num_epochs)
+    mean_losses = []
 
     for epoch in tqdm(epochs):
         train_losses = train_epoch(loader, device, model, criterion, optimizer)
 
         # Statistics
+        mean_losses.append(np.mean(train_losses))
+
         with open(stats_pth, 'a', newline='') as f:
             csv.writer(f).writerow([
                 epoch + 1,
@@ -159,6 +169,15 @@ def main(
                 f'{model.__class__.__name__.lower()}.pth'
             )
             torch.save(model.state_dict(), model_name)
+
+    # Plot
+    plt.plot(epochs, mean_losses)
+
+    plt.xlabel('Epoch')
+    plt.ylabel(ylabel)
+
+    plt.savefig(os.path.join(folder_pth, 'train.pdf'))
+    plt.close()
 
 
 if __name__ == '__main__':

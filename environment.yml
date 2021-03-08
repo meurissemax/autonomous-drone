@@ -8,7 +8,6 @@ dependencies:
   - matplotlib=3.3.4
   - numpy=1.19.2
   - opencv=4.5.1
-  - pandas=1.2.3
   - pillow=8.1.1
   - pip=21.0.1
   - python=3.8.8
