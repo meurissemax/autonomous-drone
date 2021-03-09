@@ -18,7 +18,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 
 from datasets import to_edges
-from models import DenseNet161, UNet
+from models import DenseNet161, SmallConvNet, UNet
 
 
 ########
@@ -52,6 +52,7 @@ def main(
     # Model
     models = {
         'densenet161': DenseNet161,
+        'small': SmallConvNet,
         'unet': UNet
     }
 
@@ -79,6 +80,7 @@ def main(
         # Exportation
         actions = {
             'densenet161': 'print',
+            'small': 'print',
             'unet': 'export'
         }
 
@@ -122,7 +124,7 @@ if __name__ == '__main__':
         '--model',
         type=str,
         default='densenet161',
-        choices=['densenet161', 'unet'],
+        choices=['densenet161', 'small', 'unet'],
         help='model to use for prediction'
     )
 

@@ -64,6 +64,22 @@ class DoubleConv(nn.Sequential):
         )
 
 
+class Dense(nn.Sequential):
+    """
+    Implementation of a generic dense layer.
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int
+    ):
+        super().__init__(
+            nn.Linear(in_features, out_features),
+            nn.ReLU(inplace=True)
+        )
+
+
 # Models
 
 class DenseNet161(nn.Module):
@@ -113,6 +129,69 @@ class DenseNet161(nn.Module):
         x = self.conv3(x)
 
         x = torch.flatten(x, start_dim=1)
+
+        x = self.last(x)
+
+        return x
+
+
+class SmallConvNet(nn.Module):
+    """
+    Implementation of a small convolution network for image classification.
+
+    This model is used to predict class associated to input image.
+
+    Input images must be in 320 x 180.
+    """
+
+    def __init__(self, in_channels: int, out_channels: int):
+        super().__init__()
+
+        # First layer
+        self.first = Conv(in_channels, 3)
+
+        # Convolutional layers
+        self.convs = nn.ModuleList([
+            DoubleConv(3, 32),
+            DoubleConv(32, 32),
+            DoubleConv(32, 64),
+            DoubleConv(64, 64),
+            DoubleConv(64, 128),
+        ])
+
+        # Max pool layer
+        self.max_pool = nn.MaxPool2d(2, ceil_mode=True)
+
+        # Drop out layer
+        self.drop_out = nn.Dropout(p=0.8)
+
+        # Dense layers
+        self.denses = nn.ModuleList([
+            Dense(7680, 4096),
+            Dense(4096, 2048),
+            Dense(2048, 1024),
+            Dense(1024, 512),
+            Dense(512, 128)
+        ])
+
+        # Last layers
+        self.last = nn.Sequential(
+            nn.Linear(128, out_channels),
+            nn.Softmax(dim=1)
+        )
+
+    def forward(self, x: Tensors) -> Tensors:
+        x = self.first(x)
+
+        for conv in self.convs:
+            x = conv(x)
+            x = self.max_pool(x)
+
+        x = self.drop_out(x)
+        x = torch.flatten(x, start_dim=1)
+
+        for dense in self.denses:
+            x = dense(x)
 
         x = self.last(x)
 

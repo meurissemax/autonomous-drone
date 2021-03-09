@@ -19,7 +19,7 @@ from tqdm import tqdm
 from typing import Iterable
 
 from datasets import ClassDataset, ImageDataset
-from models import DenseNet161, UNet
+from models import DenseNet161, SmallConvNet, UNet
 
 
 ##########
@@ -135,6 +135,7 @@ def main(
     # Model
     models = {
         'densenet161': DenseNet161,
+        'small': SmallConvNet,
         'unet': UNet
     }
 
@@ -220,7 +221,7 @@ if __name__ == '__main__':
         '--model',
         type=str,
         default='densenet161',
-        choices=['densenet161', 'unet'],
+        choices=['densenet161', 'small', 'unet'],
         help='model to evaluate'
     )
 
