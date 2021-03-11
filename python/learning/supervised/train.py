@@ -24,7 +24,7 @@ from datasets import ClassDataset, ImageDataset
 from models import DenseNet161, SmallConvNet, UNet
 
 current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(current)
+parent = os.path.dirname(os.path.dirname(current))
 sys.path.append(parent)
 
 from misc.plots import plt  # noqa: E402
