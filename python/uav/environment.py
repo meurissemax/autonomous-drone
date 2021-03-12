@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Implementation of tools to represent an environment and interact with it.
 """
@@ -9,13 +7,13 @@ Implementation of tools to represent an environment and interact with it.
 ###########
 
 import math
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import numpy as np
 import operator
 
 from astar import AStar
 from typing import Dict, List, Tuple
+
+from plots.latex import plt
 
 
 ##########
@@ -35,29 +33,6 @@ Path = List[Position]
 Keypoint = Tuple[Action, Position]
 
 Batteries = List[Position]
-
-
-############
-# Settings #
-############
-
-plt.rcParams['toolbar'] = 'None'
-plt.rcParams['font.size'] = 10
-plt.rcParams['figure.autolayout'] = True
-plt.rcParams['savefig.transparent'] = True
-
-if mpl.checkdep_usetex(True):
-    plt.rcParams['font.family'] = ['serif']
-    plt.rcParams['font.serif'] = ['Computer Modern']
-    plt.rcParams['text.usetex'] = True
-
-
-#####################
-# General variables #
-#####################
-
-# Number of meters the drone can cover with a fully charged battery.
-FULL_BATTERY_DISTANCE = 200
 
 
 ###########
@@ -159,6 +134,9 @@ class Environment:
             'W': '<',
             'E': '>'
         }
+
+        # Battery
+        self.full_battery_distance = 200
 
         # Load the environment and everything related
         self.load(env_pth)
@@ -270,7 +248,7 @@ class Environment:
         battery level.
         """
 
-        return math.floor(FULL_BATTERY_DISTANCE * (battery / 100))
+        return math.floor(self.full_battery_distance * (battery / 100))
 
     def _farthest_battery(self, battery: int) -> tuple:
         """
@@ -589,6 +567,9 @@ class Environment:
         # Grid
         plt.figure('Environment', figsize=(8, 6))
         plt.clf()
+
+        plt.grid(False)
+
         plt.imshow(self.grid, cmap='Greys')
 
         plt.xticks(self.xticks)
@@ -642,74 +623,3 @@ class Environment:
         """
 
         plt.show()
-
-
-########
-# Main #
-########
-
-def main(
-    env_pth: str = 'environment.txt',
-    battery: int = None
-):
-    # Create the environment
-    env = Environment(env_pth)
-
-    # Compute shortest path to objective
-    path = env.path(battery=battery)
-
-    # Get sequence of actions
-    sequence = env.path_to_seq(path)
-
-    print('Sequence of actions')
-    print(sequence)
-
-    # Extract key points
-    keypoints = env.extract_keypoints(path, sequence)
-
-    print('Key points')
-    print(keypoints)
-
-    # Group sequence of action
-    grouped = env.group_seq(sequence)
-
-    print('Grouped sequence of actions')
-    print(grouped)
-
-    # Has the drone reached its objective ?
-    print(f'Has reached objective ? {env.has_reached_obj()}')
-
-    # Show the environment
-    env.render(path=path, what=['pos', 'obj', 'bat'])
-    env.keep()
-
-
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description='Environment representation.'
-    )
-
-    parser.add_argument(
-        '-e',
-        '--environment',
-        type=str,
-        default='environment.txt',
-        help='path to environment file'
-    )
-
-    parser.add_argument(
-        '-b',
-        '--battery',
-        type=int,
-        default=None,
-        help='battery level of the drone'
-    )
-
-    args = parser.parse_args()
-
-    main(
-        env_pth=args.environment,
-        battery=args.battery
-    )

@@ -11,14 +11,19 @@ This procedure is used to test a model on one specific input.
 ###########
 
 import os
+import sys
 import time
 import torch
 import torchvision.transforms as transforms
 
 from PIL import Image
 
-from datasets import to_edges
-from models import DenseNet161, SmallConvNet, UNet
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(os.path.dirname(current))
+sys.path.append(parent)
+
+from learning.datasets import to_edges  # noqa: E402
+from learning.models import DenseNet161, SmallConvNet, UNet  # noqa: E402
 
 
 ########

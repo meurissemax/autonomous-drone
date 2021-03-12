@@ -1,5 +1,5 @@
 """
-Implementation of the data sets used by the deep learning models.
+Implementation of data sets used by the deep learning models.
 
 Each data set contains input images and associated targets. Targets depend
 on the data set (a class for the ClassDataset and an image for the

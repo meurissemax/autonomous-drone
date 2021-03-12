@@ -10,11 +10,18 @@ This process allows the drone to be controlled manually.
 # Imports #
 ###########
 
-from controllers import (
+import os
+import sys
+
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(os.path.dirname(current))
+sys.path.append(parent)
+
+from uav.controllers import (  # noqa: E402
     AirSimDrone,
     AirSimDroneNoisy,
-    Controller,
-    TelloEDU
+    TelloEDU,
+    Controller
 )
 
 

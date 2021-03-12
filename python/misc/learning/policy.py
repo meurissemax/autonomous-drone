@@ -1,4 +1,4 @@
-#!usr/bin/env python
+#!/usr/bin/env python
 
 """
 Implementation of a very simple algorithm to determine the best policy to reach
@@ -25,8 +25,8 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(os.path.dirname(current))
 sys.path.append(parent)
 
-from environment import Environment  # noqa: E402
-from misc.plots import plt  # noqa: E402
+from uav.environment import Environment  # noqa: E402
+from plots.latex import plt  # noqa: E402
 
 
 ##########

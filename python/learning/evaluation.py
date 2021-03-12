@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Implementation of the evaluation procedure of the deep learning models.
 """
@@ -18,8 +16,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from typing import Iterable
 
-from datasets import ClassDataset, ImageDataset
-from models import DenseNet161, SmallConvNet, UNet
+from .datasets import ClassDataset, ImageDataset
+from .models import DenseNet161, SmallConvNet, UNet
 
 
 ##########
@@ -85,18 +83,15 @@ def pr_eval(outputs: Tensors, targets: Tensors) -> list:
     return [p, r]
 
 
-########
-# Main #
-########
+# Main
 
-def main(
+def evaluate(
     outputs_pth: str = 'outputs/',
     dataset_id: str = 'class',
     test_pth: str = 'test.json',
     model_id: str = 'densenet161',
     edges: bool = False,
     batch_size: int = 32,
-    num_workers: int = 0,
     out_channels: int = 2,
     weights_pth: str = 'weights.pth',
     metric_id: str = 'pr'
@@ -128,7 +123,6 @@ def main(
     loader = DataLoader(
         testset,
         batch_size=batch_size,
-        num_workers=num_workers,
         pin_memory=torch.cuda.is_available()
     )
 
@@ -182,109 +176,3 @@ def main(
     with open(stats_pth, 'w', newline='') as f:
         csv.writer(f).writerow(stats_header)
         csv.writer(f).writerow(list(np.concatenate((metric_mean, metric_std))))
-
-
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description='Evaluate a deep learning model.'
-    )
-
-    parser.add_argument(
-        '-o',
-        '--outputs',
-        type=str,
-        default='outputs/',
-        help='path to outputs folder'
-    )
-
-    parser.add_argument(
-        '-d',
-        '--dataset',
-        type=str,
-        default='class',
-        choices=['class', 'image'],
-        help='data set to use'
-    )
-
-    parser.add_argument(
-        '-t',
-        '--test',
-        type=str,
-        default='test.json',
-        help='path to JSON file with testing data'
-    )
-
-    parser.add_argument(
-        '-m',
-        '--model',
-        type=str,
-        default='densenet161',
-        choices=['densenet161', 'small', 'unet'],
-        help='model to evaluate'
-    )
-
-    parser.add_argument(
-        '-e',
-        '--edges',
-        default=False,
-        action='store_true',
-        help='flag to work with edges'
-    )
-
-    parser.add_argument(
-        '-b',
-        '--batch',
-        type=int,
-        default=32,
-        help='batch size'
-    )
-
-    parser.add_argument(
-        '-w',
-        '--workers',
-        type=int,
-        default=0,
-        help='number of workers'
-    )
-
-    parser.add_argument(
-        '-c',
-        '--channels',
-        type=int,
-        default=2,
-        help='number output channels'
-    )
-
-    parser.add_argument(
-        '-i',
-        '--weights',
-        type=str,
-        default='weights.pth',
-        help='path to weights file'
-    )
-
-    parser.add_argument(
-        '-r',
-        '--metric',
-        type=str,
-        default='pr',
-        choices=['pr'],
-        help='metric to use'
-    )
-
-    args = parser.parse_args()
-
-    main(
-        outputs_pth=args.outputs,
-        dataset_id=args.dataset,
-        test_pth=args.test,
-        model_id=args.model,
-        edges=args.edges,
-        batch_size=args.batch,
-        num_workers=args.workers,
-        out_channels=args.channels,
-        weights_pth=args.weights,
-        metric_id=args.metric
-    )

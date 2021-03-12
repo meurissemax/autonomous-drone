@@ -1,5 +1,5 @@
 """
-Settings used to create plots.
+Settings used to generate plots with LaTeX style.
 """
 
 ###########
@@ -13,6 +13,9 @@ import matplotlib.pyplot as plt
 ############
 # Settings #
 ############
+
+# Tool bar
+mpl.rcParams['toolbar'] = 'None'
 
 # Axes
 plt.rcParams['axes.grid'] = True
