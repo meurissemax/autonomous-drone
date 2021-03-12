@@ -552,6 +552,26 @@ class Environment:
 
         return self.pos == self.obj
 
+    # Reinforcement Learning utilities
+
+    def to_rewards(self) -> Grid:
+        """
+        Create the rewarded version of the environment.
+        """
+
+        rewards = self.grid.copy()
+
+        # Free positions
+        rewards = np.where(self.grid == 0, -1, rewards)
+
+        # Non free positions
+        rewards = np.where(self.grid == 1, -1e10, rewards)
+
+        # Objective
+        rewards[self.obj] = 100
+
+        return rewards
+
     # Rendering
 
     def render(
@@ -629,7 +649,7 @@ class Environment:
 ########
 
 def main(
-    env_pth: str = 'indoor-corridor.txt',
+    env_pth: str = 'environment.txt',
     battery: int = None
 ):
     # Create the environment
@@ -675,7 +695,7 @@ if __name__ == '__main__':
         '-e',
         '--environment',
         type=str,
-        default='indoor-corridor.txt',
+        default='environment.txt',
         help='path to environment file'
     )
 
