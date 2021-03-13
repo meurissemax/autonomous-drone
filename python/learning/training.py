@@ -87,7 +87,7 @@ def train(
         'nll': (nn.NLLLoss(), torch.long, 'NLL Loss')
     }
 
-    criterion, dtype, ylabel = criterions.get(criterion_id)
+    criterion, dtype, ylabel = criterions.get(criterion_id, 'mse')
 
     # Data set and data loader
     print('Loading data set...')
@@ -97,7 +97,7 @@ def train(
         'image': ImageDataset
     }
 
-    trainset = datasets.get(dataset_id)(
+    trainset = datasets.get(dataset_id, 'class')(
         json_pth=train_pth,
         modelname=model_id,
         augment=augment,
@@ -123,7 +123,7 @@ def train(
 
     in_channels = inpt.size()[0]
 
-    model = models.get(model_id)(in_channels, out_channels)
+    model = models.get(model_id, 'densenet161')(in_channels, out_channels)
     model = model.to(device)
     model.train()
 

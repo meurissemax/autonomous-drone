@@ -114,7 +114,7 @@ def evaluate(
         'image': ImageDataset
     }
 
-    testset = datasets.get(dataset_id)(
+    testset = datasets.get(dataset_id, 'class')(
         json_pth=test_pth,
         modelname=model_id,
         edges=edges
@@ -137,7 +137,7 @@ def evaluate(
 
     in_channels = inpt.size()[0]
 
-    model = models.get(model_id)(in_channels, out_channels)
+    model = models.get(model_id, 'densenet161')(in_channels, out_channels)
     model = model.to(device)
     model.load_state_dict(torch.load(weights_pth, map_location=device))
     model.eval()
@@ -147,7 +147,7 @@ def evaluate(
         'pr': pr_eval
     }
 
-    evaluate = metrics.get(metric_id)
+    evaluate = metrics.get(metric_id, 'pr')
 
     values = []
 
@@ -168,7 +168,7 @@ def evaluate(
         'pr': ['precision_mean', 'recall_mean', 'precision_std', 'recall_std']
     }
 
-    stats_header = stats_headers.get(metric_id)
+    stats_header = stats_headers.get(metric_id, 'pr')
 
     metric_mean = np.mean(values, axis=0)
     metric_std = np.std(values, axis=0)

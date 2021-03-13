@@ -63,7 +63,7 @@ def main(
 
     in_channels = inpt.size()[1]
 
-    model = models.get(model_id)(in_channels, out_channels)
+    model = models.get(model_id, 'densenet161')(in_channels, out_channels)
     model = model.to(device)
     model.load_state_dict(torch.load(weights_pth, map_location=device))
     model.eval()
@@ -89,7 +89,7 @@ def main(
             'unet': 'export'
         }
 
-        action = actions.get(model_id)
+        action = actions.get(model_id, 'densenet161')
 
         if action == 'print':
             print(f'Output: {outpt}')

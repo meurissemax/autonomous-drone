@@ -115,6 +115,7 @@ class DenseNet161(nn.Module):
         self.conv3 = Conv(128, 16)
 
         self.last = nn.Sequential(
+            nn.Flatten(),
             nn.Linear(16 * 1 * 6, out_channels),
             nn.Softmax(dim=1)
         )
@@ -127,8 +128,6 @@ class DenseNet161(nn.Module):
         x = self.conv1(x)
         x = self.conv2(x)
         x = self.conv3(x)
-
-        x = torch.flatten(x, start_dim=1)
 
         x = self.last(x)
 
@@ -165,6 +164,9 @@ class SmallConvNet(nn.Module):
         # Drop out layer
         self.drop_out = nn.Dropout(p=0.8)
 
+        # Flatten layer
+        self.flatten = nn.Flatten()
+
         # Dense layers
         self.denses = nn.ModuleList([
             Dense(7680, 4096),
@@ -188,7 +190,7 @@ class SmallConvNet(nn.Module):
             x = self.max_pool(x)
 
         x = self.drop_out(x)
-        x = torch.flatten(x, start_dim=1)
+        x = self.flatten(x)
 
         for dense in self.denses:
             x = dense(x)
