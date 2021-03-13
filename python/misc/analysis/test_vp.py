@@ -19,7 +19,7 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(os.path.dirname(current))
 sys.path.append(parent)
 
-from analysis.vanishing_point import VPClassic  # noqa: E402
+from analysis.vanishing_point import VPClassic, VPEdgelets  # noqa: E402
 
 
 ########
@@ -33,7 +33,8 @@ def main(
 ):
     # Load method
     methods = {
-        'classic': VPClassic
+        'classic': VPClassic,
+        'edgelets': VPEdgelets
     }
 
     method = methods.get(method_id)(export=True)
@@ -72,7 +73,7 @@ if __name__ == '__main__':
         '--method',
         type=str,
         default='classic',
-        choices=['classic'],
+        choices=['classic', 'edgelets'],
         help='method to use'
     )
 

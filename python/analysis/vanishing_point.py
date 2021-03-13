@@ -11,6 +11,7 @@ import numpy as np
 
 from abc import ABC, abstractmethod
 from itertools import product
+from skimage import color, feature, transform
 from typing import List, Tuple, Union
 
 
@@ -19,8 +20,12 @@ from typing import List, Tuple, Union
 ##########
 
 Image = np.array
+
 Point = Tuple
 Line = Tuple[Point, Point]
+
+Edgelets = Tuple[np.array]
+
 Intermediate = List[Image]
 
 
@@ -240,5 +245,147 @@ class VPClassic(VPDetector):
             cv2.rectangle(vp, (rx1, ry1), (rx2, ry2), (0, 255, 0), 3)
 
             return guess, [preprocessed, edges, img_lines, vp]
+
+        return guess
+
+
+class VPEdgelets(VPDetector):
+    """
+    Implementation of a vanishing point detector based on edgelets and RANSAC.
+
+    Inspired from:
+        - Auto-Rectification of User Photos, Chaudhury et al.
+        - https://github.com/chsasank/Image-Rectification
+    """
+
+    def __init__(self, export=False):
+        super().__init__(export)
+
+    # Specific
+
+    def _edgelets(self, img: Image) -> Edgelets:
+        """
+        Compute edgelets of an image.
+        """
+
+        # Get lines
+        gray = color.rgb2gray(img)
+        edges = feature.canny(gray, 3)
+        lines = transform.probabilistic_hough_line(
+            edges,
+            line_length=3,
+            line_gap=2
+        )
+
+        locations, directions, strengths = [], [], []
+
+        for p0, p1 in lines:
+            p0, p1 = np.array(p0), np.array(p1)
+
+            locations.append((p0 + p1) / 2)
+            directions.append(p1 - p0)
+            strengths.append(np.linalg.norm(p1 - p0))
+
+        # Normalize
+        locations = np.array(locations)
+        directions = np.array(directions)
+        strengths = np.array(strengths)
+
+        norm = np.linalg.norm(directions, axis=1)[:, np.newaxis]
+        directions = np.divide(directions, norm)
+
+        return locations, directions, strengths
+
+    def _lines(self, edgelets: Edgelets) -> np.array:
+        """
+        Compute lines from edgelets.
+        """
+
+        locations, directions, _ = edgelets
+
+        normals = np.zeros_like(directions)
+        normals[:, 0] = directions[:, 1]
+        normals[:, 1] = -directions[:, 0]
+
+        p = -np.sum(locations * normals, axis=1)
+        lines = np.concatenate((normals, p[:, np.newaxis]), axis=1)
+
+        return lines
+
+    def _votes(self, edgelets: Edgelets, model: np.array) -> int:
+        """
+        Compute votes for each of the edgelet against a given vanishing point.
+        """
+
+        threshold_inlier = 5
+
+        vp = model[:2] / model[2]
+        locations, directions, strengths = edgelets
+
+        est_directions = locations - vp
+
+        dot_prod = np.sum(est_directions * directions, axis=1)
+
+        abs_prod = np.linalg.norm(directions, axis=1)
+        abs_prod *= np.linalg.norm(est_directions, axis=1)
+        abs_prod[abs_prod == 0] = 1e-5
+
+        cosine_theta = dot_prod / abs_prod
+        theta = np.arccos(np.clip(-1, 1, np.abs(cosine_theta)))
+
+        theta_thresh = threshold_inlier * np.pi / 180
+
+        return (theta < theta_thresh) * strengths
+
+    # Abstract interface
+
+    def detect(self, img):
+        """
+        Estimate vanishing point using edgelets and RANSAC.
+        """
+
+        num_ransac_iter = 2000
+
+        # Compute edgelets
+        edgelets = self._edgelets(img)
+        _, _, strengths = edgelets
+
+        # Compute lines
+        lines = self._lines(edgelets)
+
+        num_pts = strengths.size
+
+        arg_sort = np.argsort(-strengths)
+        first_index_space = arg_sort[:num_pts // 5]
+        second_index_space = arg_sort[:num_pts // 2]
+
+        # Compute best guess
+        best_model = np.array([0, 0, 1])
+        best_votes = np.zeros(num_pts)
+
+        for _ in range(num_ransac_iter):
+            ind1 = np.random.choice(first_index_space)
+            ind2 = np.random.choice(second_index_space)
+
+            current_model = np.cross(lines[ind1], lines[ind2])
+
+            # Rejecte degenerate cases
+            if np.sum(current_model ** 2) < 1 or current_model[2] == 0:
+                continue
+
+            current_votes = self._votes(edgelets, current_model)
+
+            if current_votes.sum() > best_votes.sum():
+                best_model = current_model
+                best_votes = current_votes
+
+        guess = tuple(best_model[:2] / best_model[2])
+
+        if self.export:
+            vp = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+            cv2.circle(vp, (int(guess[0]), int(guess[1])), 5, (0, 255, 0), -1)
+
+            return guess, [vp]
 
         return guess
