@@ -300,8 +300,10 @@ class Environment:
 
         # Move
         if action in self.move_actions:
-            pos = tuple(i + j for i, j in zip(pos, transition))
-            pos = self._bound(pos)
+            npos = tuple(i + j for i, j in zip(pos, transition))
+            npos = self._bound(npos)
+
+            pos = npos if self._is_free(npos) else pos
 
         # Rotate
         elif action in self.turn_actions:

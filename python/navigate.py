@@ -10,7 +10,12 @@ Navigation process of the drone.
 
 from uav.controllers import AirSimDrone, AirSimDroneNoisy, TelloEDU
 from uav.environment import Environment
-from uav.navigation import Naive, Vision, Vanishing
+from uav.navigation import (
+    NaiveAlgorithm,
+    VisionAlgorithm,
+    VanishingAlgorithm,
+    QRCodeAlgorithm
+)
 
 
 ########
@@ -37,9 +42,10 @@ def main(
 
     # Algorithm
     algorithms = {
-        'naive': Naive,
-        'vision': Vision,
-        'vanishing': Vanishing
+        'naive': NaiveAlgorithm,
+        'vision': VisionAlgorithm,
+        'vanishing': VanishingAlgorithm,
+        'qr': QRCodeAlgorithm
     }
 
     algorithm = algorithms.get(algorithm_id)
@@ -78,7 +84,7 @@ if __name__ == '__main__':
         '--algorithm',
         type=str,
         default='naive',
-        choices=['naive', 'vision', 'vanishing'],
+        choices=['naive', 'vision', 'vanishing', 'qr'],
         help='navigation algorithm to use'
     )
 
