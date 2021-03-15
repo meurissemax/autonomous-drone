@@ -51,7 +51,12 @@ def main(
     if edges:
         inpt = to_edges(inpt)
 
-    inpt = transforms.ToTensor()(inpt)
+    process = transforms.Compose([
+        transforms.Resize((180, 320)),
+        transforms.ToTensor()
+    ])
+
+    inpt = process(inpt)
     inpt = inpt.unsqueeze(0)
 
     # Model

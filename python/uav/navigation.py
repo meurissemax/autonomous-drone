@@ -6,6 +6,7 @@ Implementation of navigation modules and algorithms.
 # Imports #
 ###########
 
+import cv2
 import math
 import numpy as np
 import torch
@@ -195,7 +196,10 @@ class VisionModule(NavModule):
         self.model = model
 
         # Processing
-        self.process = transforms.ToTensor()
+        self.process = transforms.Compose([
+            lambda x: cv2.resize(x, (320, 180)),
+            transforms.ToTensor()
+        ])
 
     # Abstract interface
 
@@ -232,6 +236,8 @@ class VanishingModule(NavModule):
     # Abstract interface
 
     def run(self, img: Image):
+        img = cv2.resize(img, (320, 180))
+
         # Define bounds, if not defined
         if self.lower is None:
             h, w, _ = img.shape

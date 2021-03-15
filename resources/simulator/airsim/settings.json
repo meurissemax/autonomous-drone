@@ -15,8 +15,8 @@
         "CaptureSettings": [
             {
                 "ImageType": 0,
-                "Width": 320,
-                "Height": 180
+                "Width": 1280,
+                "Height": 720
             }
         ]
     }
