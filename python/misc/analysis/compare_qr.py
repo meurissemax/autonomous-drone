@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 """
-Implementation of the evaluation process of the different vanishing point
-detection methods.
+Implementation of the evaluation process of the different QR code decoding
+methods.
 """
 
 ###########
@@ -10,7 +10,6 @@ detection methods.
 ###########
 
 import json
-import math
 import numpy as np
 import os
 import sys
@@ -24,12 +23,7 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(os.path.dirname(current))
 sys.path.append(parent)
 
-from analysis.vanishing_point import (  # noqa: E402
-    VPClassic,
-    VPDetector,
-    VPEdgelets
-)
-
+from analysis.qr_code import QRDecoder, QROpenCV, QRZBar  # noqa: E402
 from plots.latex import plt  # noqa: E402
 
 
@@ -38,14 +32,12 @@ from plots.latex import plt  # noqa: E402
 #############
 
 def evaluate(
-    methods: List[VPDetector],
+    methods: List[QRDecoder],
     json_pth: str,
-    threshold: int,
     output_pth: str
 ):
     """
-    Evaluate a serie of vanishing point detectors by running them on some truth
-    images.
+    Evaluate a serie of QR code decoders by running them on some truth images.
     """
 
     # Initialize
@@ -66,15 +58,14 @@ def evaluate(
         img = Image.open(d['image'])
         img = np.array(img)
 
-        truth = d['vp']
+        content = d['content']
 
         for method in methods:
             start = time.time()
-            guess = method().detect(img)
+            decoded, _ = method().decode(img)
             end = time.time()
 
-            dist = math.dist(guess, truth)
-            result = 1 if dist < threshold else 0
+            result = 1 if decoded == content else 0
 
             results[method.__name__] += result
             times[method.__name__] += end - start
@@ -109,21 +100,20 @@ def evaluate(
 
 def main(
     json_pth: str = 'data.json',
-    threshold: int = 30,
     outpt_pth: str = 'outputs/'
 ):
     # List of methods
-    methods = [VPClassic, VPEdgelets]
+    methods = [QROpenCV, QRZBar]
 
     # Evaluate
-    evaluate(methods, json_pth, threshold, outpt_pth)
+    evaluate(methods, json_pth, outpt_pth)
 
 
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Evaluate vanishing point detectors.'
+        description='Evaluate QR code decoders.'
     )
 
     parser.add_argument(
@@ -132,14 +122,6 @@ if __name__ == '__main__':
         type=str,
         default='data.json',
         help='path to JSON data file'
-    )
-
-    parser.add_argument(
-        '-t',
-        '--threshold',
-        type=int,
-        default=30,
-        help='threshold for method evaluation'
     )
 
     parser.add_argument(
@@ -154,6 +136,5 @@ if __name__ == '__main__':
 
     main(
         json_pth=args.input,
-        threshold=args.threshold,
         outpt_pth=args.output
     )

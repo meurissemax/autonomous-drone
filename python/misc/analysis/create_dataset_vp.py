@@ -2,7 +2,7 @@
 
 """
 Implementation of tools used to generate data sets (a serie of annotated
-images) for analysis methods.
+images) for vanishing point detection methods.
 """
 
 ###########

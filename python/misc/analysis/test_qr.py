@@ -16,7 +16,7 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(os.path.dirname(current))
 sys.path.append(parent)
 
-from analysis.qr_code import QROpenCV  # noqa: E402
+from analysis.qr_code import QROpenCV, QRZBar  # noqa: E402
 
 
 ########
@@ -29,7 +29,8 @@ def main(
 ):
     # Load method
     methods = {
-        'opencv': QROpenCV
+        'opencv': QROpenCV,
+        'zbar': QRZBar
     }
 
     method = methods.get(method_id)()
@@ -61,7 +62,7 @@ if __name__ == '__main__':
         '--method',
         type=str,
         default='opencv',
-        choices=['opencv'],
+        choices=['opencv', 'zbar'],
         help='method to use'
     )
 

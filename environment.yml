@@ -20,3 +20,4 @@ dependencies:
     - astar==0.93
     - keyboard==0.13.5
     - msgpack-rpc-python==0.4.1
+    - pyzbar==0.1.8

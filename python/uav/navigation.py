@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 from functools import partial
 from typing import List, Tuple, Union
 
-from analysis.qr_code import QROpenCV
+from analysis.qr_code import QRZBar
 from analysis.vanishing_point import VPClassic
 from .controllers import Controller
 from .environment import Environment
@@ -272,7 +272,7 @@ class QRCodeModule(NavModule):
         super().__init__(verbose)
 
         # QR code decoder
-        self.decoder = QROpenCV()
+        self.decoder = QRZBar()
 
     # Abstract interface
 
