@@ -170,7 +170,24 @@ class AirSimDrone(Controller):
             error = True
 
         if not error:
-            self.client.moveByVelocityBodyFrameAsync(*factors).join()
+            if direction in ['up', 'down']:
+                self.client.moveByVelocityBodyFrameAsync(*factors).join()
+            else:
+                kinematics = self.state().kinematics_estimated
+
+                z = kinematics.position.z_val
+                q = kinematics.orientation
+
+                _, _, yaw = airsim.to_eularian_angles(q)
+
+                vx, vy = factors[0], factors[1]
+
+                vx_new = vx * np.cos(yaw) - vy * np.sin(yaw)
+                vy_new = vx * np.sin(yaw) + vy * np.cos(yaw)
+
+                factors = [vx_new, vy_new, z, duration]
+
+                self.client.moveByVelocityZAsync(*factors).join()
 
     def rotate(self, direction, angle):
         error = False
