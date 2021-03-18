@@ -20,7 +20,7 @@ from analysis.qr_code import QRZBar
 from analysis.vanishing_point import VPClassic
 from .controllers import Controller
 from .environment import Environment
-from learning.models import DenseNet161, SmallConvNet
+from learning.models import DenseNet, SmallConvNet
 
 
 ##########
@@ -184,7 +184,8 @@ class VisionModule(NavModule):
 
         # Model
         models = {
-            'densenet161': DenseNet161,
+            'densenet121': partial(DenseNet, densenet_id='121'),
+            'densenet161': partial(DenseNet, densenet_id='161'),
             'small': SmallConvNet
         }
 
@@ -322,8 +323,8 @@ class VisionAlgorithm(NavAlgorithm):
         # Create vision module
         self.module = VisionModule(
             n_outputs=2,
-            model_id='densenet161',
-            weights_pth='densenet161.pth',
+            model_id='densenet121',
+            weights_pth='densenet121.pth',
             verbose=True
         )
 

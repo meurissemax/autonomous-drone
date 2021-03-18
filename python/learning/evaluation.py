@@ -11,13 +11,14 @@ import numpy as np
 import os
 import torch
 
+from functools import partial
 from sklearn.metrics import precision_score, recall_score
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from typing import Iterable
 
 from .datasets import ClassDataset, ImageDataset
-from .models import DenseNet161, SmallConvNet, UNet
+from .models import DenseNet, SmallConvNet, UNet
 
 
 ##########
@@ -89,7 +90,7 @@ def evaluate(
     outputs_pth: str = 'outputs/',
     dataset_id: str = 'class',
     test_pth: str = 'test.json',
-    model_id: str = 'densenet161',
+    model_id: str = 'densenet121',
     edges: bool = False,
     batch_size: int = 32,
     out_channels: int = 2,
@@ -116,7 +117,6 @@ def evaluate(
 
     testset = datasets.get(dataset_id, 'class')(
         json_pth=test_pth,
-        modelname=model_id,
         edges=edges
     )
 
@@ -128,7 +128,8 @@ def evaluate(
 
     # Model
     models = {
-        'densenet161': DenseNet161,
+        'densenet121': partial(DenseNet, densenet_id='121'),
+        'densenet161': partial(DenseNet, densenet_id='161'),
         'small': SmallConvNet,
         'unet': UNet
     }
@@ -137,7 +138,7 @@ def evaluate(
 
     in_channels = inpt.size()[0]
 
-    model = models.get(model_id, 'densenet161')(in_channels, out_channels)
+    model = models.get(model_id, 'densenet121')(in_channels, out_channels)
     model = model.to(device)
     model.load_state_dict(torch.load(weights_pth, map_location=device))
     model.eval()

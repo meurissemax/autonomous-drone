@@ -82,37 +82,59 @@ class Dense(nn.Sequential):
 
 # Models
 
-class DenseNet161(nn.Module):
+class DenseNet(nn.Module):
     """
-    Implementation of the modified version of model DenseNet161.
+    Implementation of modified versions of DenseNet models.
 
-    Last classification layer has been replaced by 3 convolution layers
+    Last classification layer has been replaced by convolutions layers
     followed by 1 fully connected one.
 
-    This model is used to predict class associated to input image.
+    DenseNet models are used to predict class associated to input image.
 
     Input images must be in 320 x 180.
+
+    Available DenseNet models are: '121' and '161' (values for 'densenet_id').
     """
 
-    def __init__(self, in_channels: int, out_channels: int):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        densenet_id: str = '121'
+    ):
         super().__init__()
 
-        # Pre trained original DenseNet161
-        self.densenet161 = torch.hub.load(
-            'pytorch/vision:v0.6.0',
-            'densenet161',
+        # Normalization
+        self.register_buffer(
+            'mean',
+            torch.tensor([0.485, 0.456, 0.406]).view(-1, 1, 1)
+        )
+
+        self.register_buffer(
+            'std',
+            torch.tensor([0.229, 0.224, 0.225]).view(-1, 1, 1)
+        )
+
+        # Pre trained original DenseNet
+        self.densenet = torch.hub.load(
+            'pytorch/vision:v0.8.1',
+            f'densenet{densenet_id}',
             pretrained=True
         )
 
         # Remove last layer
-        self.densenet161 = nn.Sequential(*list(self.densenet161.features))
+        self.densenet = nn.Sequential(*list(self.densenet.features))
 
         # New layers
         self.first = Conv(in_channels, 3)
 
-        self.conv1 = Conv(2208, 1024)
-        self.conv2 = Conv(1024, 128, kernel_size=5)
-        self.conv3 = Conv(128, 16)
+        self.convs = nn.ModuleList([
+            Conv(1024, 128, kernel_size=5),
+            Conv(128, 16)
+        ])
+
+        if densenet_id == '161':
+            self.convs.insert(0, Conv(2208, 1024))
 
         self.last = nn.Sequential(
             nn.Flatten(),
@@ -121,13 +143,13 @@ class DenseNet161(nn.Module):
         )
 
     def forward(self, x: Tensors) -> Tensors:
+        x = (x - self.mean) / self.std
+
         x = self.first(x)
+        x = self.densenet(x)
 
-        x = self.densenet161(x)
-
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
+        for conv in self.convs:
+            x = conv(x)
 
         x = self.last(x)
 
@@ -168,13 +190,13 @@ class SmallConvNet(nn.Module):
         self.flatten = nn.Flatten()
 
         # Dense layers
-        self.denses = nn.ModuleList([
-            Dense(7680, 4096),
-            Dense(4096, 2048),
-            Dense(2048, 1024),
-            Dense(1024, 512),
-            Dense(512, 128)
-        ])
+        self.denses = nn.ModuleList(
+            [
+                Dense(7680, 4096),
+                Dense(4096, 2048),
+                Dense(2048, 128)
+            ] + [Dense(128, 128) for i in range(5)]
+        )
 
         # Last layers
         self.last = nn.Sequential(

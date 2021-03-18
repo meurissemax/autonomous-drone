@@ -16,6 +16,7 @@ import time
 import torch
 import torchvision.transforms as transforms
 
+from functools import partial
 from PIL import Image
 
 current = os.path.dirname(os.path.realpath(__file__))
@@ -23,7 +24,7 @@ parent = os.path.dirname(os.path.dirname(current))
 sys.path.append(parent)
 
 from learning.datasets import to_edges  # noqa: E402
-from learning.models import DenseNet161, SmallConvNet, UNet  # noqa: E402
+from learning.models import DenseNet, SmallConvNet, UNet  # noqa: E402
 
 
 ########
@@ -33,7 +34,7 @@ from learning.models import DenseNet161, SmallConvNet, UNet  # noqa: E402
 def main(
     input_pth: str = 'input.png',
     edges: bool = False,
-    model_id: str = 'densenet161',
+    model_id: str = 'densenet121',
     out_channels: int = 2,
     weights_pth: str = 'weights.pth',
     output_pth: str = 'output.png'
@@ -61,17 +62,22 @@ def main(
 
     # Model
     models = {
-        'densenet161': DenseNet161,
+        'densenet121': partial(DenseNet, densenet_id='121'),
+        'densenet161': partial(DenseNet, densenet_id='161'),
         'small': SmallConvNet,
         'unet': UNet
     }
 
     in_channels = inpt.size()[1]
 
-    model = models.get(model_id, 'densenet161')(in_channels, out_channels)
+    model = models.get(model_id, 'densenet121')(in_channels, out_channels)
     model = model.to(device)
     model.load_state_dict(torch.load(weights_pth, map_location=device))
     model.eval()
+
+    n_params = sum(p.numel() for p in model.parameters())
+
+    print(f'Number of parameters: {n_params}')
 
     # Prediction
     with torch.no_grad():
@@ -89,12 +95,13 @@ def main(
 
         # Exportation
         actions = {
+            'densenet121': 'print',
             'densenet161': 'print',
             'small': 'print',
             'unet': 'export'
         }
 
-        action = actions.get(model_id, 'densenet161')
+        action = actions.get(model_id, 'densenet121')
 
         if action == 'print':
             print(f'Output: {outpt}')
@@ -133,8 +140,8 @@ if __name__ == '__main__':
         '-m',
         '--model',
         type=str,
-        default='densenet161',
-        choices=['densenet161', 'small', 'unet'],
+        default='densenet121',
+        choices=['densenet121', 'densenet161', 'small', 'unet'],
         help='model to use for prediction'
     )
 

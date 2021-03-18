@@ -12,12 +12,13 @@ import os
 import torch
 import torch.nn as nn
 
+from functools import partial
 from torch.optim import Adam, Optimizer
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from .datasets import ClassDataset, ImageDataset
-from .models import DenseNet161, SmallConvNet, UNet
+from .models import DenseNet, SmallConvNet, UNet
 from plots.latex import plt
 
 
@@ -63,7 +64,7 @@ def train(
     criterion_id: str = 'mse',
     dataset_id: str = 'class',
     train_pth: str = 'train.json',
-    model_id: str = 'densenet161',
+    model_id: str = 'densenet121',
     augment: bool = False,
     edges: bool = False,
     batch_size: int = 32,
@@ -99,7 +100,6 @@ def train(
 
     trainset = datasets.get(dataset_id, 'class')(
         json_pth=train_pth,
-        modelname=model_id,
         augment=augment,
         dtype=dtype,
         edges=edges
@@ -114,7 +114,8 @@ def train(
 
     # Model
     models = {
-        'densenet161': DenseNet161,
+        'densenet121': partial(DenseNet, densenet_id='121'),
+        'densenet161': partial(DenseNet, densenet_id='161'),
         'small': SmallConvNet,
         'unet': UNet
     }
@@ -123,7 +124,7 @@ def train(
 
     in_channels = inpt.size()[0]
 
-    model = models.get(model_id, 'densenet161')(in_channels, out_channels)
+    model = models.get(model_id, 'densenet121')(in_channels, out_channels)
     model = model.to(device)
     model.train()
 

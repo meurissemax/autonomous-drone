@@ -87,28 +87,17 @@ class ClassDataset(Dataset):
     def __init__(
         self,
         json_pth: str,
-        modelname: str = '',
         augment: bool = False,
         dtype: torch.dtype = torch.float,
         edges: bool = False
     ):
         super().__init__()
 
+        # Data
         self.data = []
 
         # Process
-        processes = {
-            'densetnet161': [
-                transforms.ToTensor(),
-                transforms.Normalize(
-                    mean=[0.485, 0.456, 0.406],
-                    std=[0.229, 0.224, 0.225]
-                )
-            ]
-        }
-
-        self.process = processes.get(modelname, [transforms.ToTensor()])
-        self.process = transforms.Compose(self.process)
+        self.process = transforms.ToTensor()
 
         # Data augmentation
         if augment:
@@ -195,13 +184,13 @@ class ImageDataset(Dataset):
     def __init__(
         self,
         json_pth: str,
-        modelname: str = '',
         augment: bool = False,
         dtype: torch.dtype = torch.long,
         edges: bool = False
     ):
         super().__init__()
 
+        # Data
         self.data = []
 
         # Process
