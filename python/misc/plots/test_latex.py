@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Implementation of some tests with settings used to generate plots with LaTeX

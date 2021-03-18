@@ -54,7 +54,7 @@ class VPDetector(ABC):
         self.export = export
 
     @abstractmethod
-    def detect(img: Image) -> Union[Point, Tuple[Point, Intermediate]]:
+    def detect(self, img: Image) -> Union[Point, Tuple[Point, Intermediate]]:
         """
         Return the coordinates, in pixels, of the vanishing point of the image
         (and eventually all intermediate results).
