@@ -91,8 +91,11 @@ class VPClassic(VPDetector):
 
     def _edges(self, img: Image) -> Image:
         # Canny's algorithm
-        lo_thresh = 50
-        hi_thresh = 250
+        median = np.median(img)
+        sigma = 0.33
+
+        lo_thresh = int(max(0, (1.0 - sigma) * median))
+        hi_thresh = int(min(255, (1.0 + sigma) * median))
         filter_size = 3
 
         img = cv2.Canny(
@@ -103,24 +106,17 @@ class VPClassic(VPDetector):
             L2gradient=True
         )
 
-        # Gaussian blur
-        blur_size = 3
-
-        img = cv2.GaussianBlur(
-            img,
-            (blur_size, blur_size),
-            0
-        )
-
         return img
 
     def _lines(self, img: Image) -> List[Line]:
+        h, w = img.shape
+
         # Hough transform
         rho = 1
         theta = np.pi / 180
         thresh = 10
-        min_line_length = 15
-        max_line_gap = 5
+        min_line_length = w // 40
+        max_line_gap = w // 256
 
         lines = cv2.HoughLinesP(
             img,
@@ -132,20 +128,24 @@ class VPClassic(VPDetector):
         )
 
         # Get and filter end points
-        x_thresh = 35
-        y_thresh = 20
+        if lines is None:
+            return []
 
+        xy_thresh = w // 25
         pts = []
 
         for line in lines:
             x1, y1, x2, y2 = line[0]
 
-            if abs(x1 - x2) > x_thresh and abs(y1 - y2) > y_thresh:
+            if abs(x1 - x2) > xy_thresh and abs(y1 - y2) > xy_thresh:
                 pts.append(((x1, y1), (x2, y2)))
 
         return pts
 
     def _intersections(self, lines: List[Line]) -> List[Point]:
+        if len(lines) == 0:
+            return []
+
         inters = []
 
         def det(a, b):
@@ -206,31 +206,39 @@ class VPClassic(VPDetector):
             vp = img.copy()
 
         # Find best cell
-        for i, j in product(range(cols), range(rows)):
-            left = i * grid_size
-            right = (i + 1) * grid_size
-            bottom = j * grid_size
-            top = (j + 1) * grid_size
+        if len(intersections) > 0:
+            for i, j in product(range(cols), range(rows)):
+                left = i * grid_size
+                right = (i + 1) * grid_size
+                bottom = j * grid_size
+                top = (j + 1) * grid_size
 
-            if self.export:
-                cv2.rectangle(vp, (left, bottom), (right, top), (0, 0, 255), 2)
+                if self.export:
+                    cv2.rectangle(
+                        vp,
+                        (left, bottom),
+                        (right, top),
+                        (0, 0, 255),
+                        2
+                    )
 
-            n_inter = 0
+                n_inter = 0
 
-            for x, y in intersections:
-                if left < x < right and bottom < y < top:
-                    n_inter += 1
+                for x, y in intersections:
+                    if left < x < right and bottom < y < top:
+                        n_inter += 1
 
-            if n_inter > max_inter:
-                max_inter = n_inter
-                guess = ((left + right) / 2, (bottom + top) / 2)
+                if n_inter > max_inter:
+                    max_inter = n_inter
+                    guess = ((left + right) / 2, (bottom + top) / 2)
 
         if self.export:
             # Draw lines
             img_lines = img.copy()
 
-            for p1, p2 in lines:
-                cv2.line(img_lines, p1, p2, (0, 0, 255), 2)
+            if len(lines) > 0:
+                for p1, p2 in lines:
+                    cv2.line(img_lines, p1, p2, (0, 0, 255), 2)
 
             # Draw best cell
             gx, gy = guess
@@ -344,7 +352,7 @@ class VPEdgelets(VPDetector):
         Estimate vanishing point using edgelets and RANSAC.
         """
 
-        num_ransac_iter = 2000
+        num_ransac_iter = 50
 
         # Compute edgelets
         edgelets = self._edgelets(img)

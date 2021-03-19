@@ -109,7 +109,7 @@ def evaluate(
 
 def main(
     json_pth: str = 'data.json',
-    threshold: int = 30,
+    threshold: int = 120,
     outpt_pth: str = 'outputs/'
 ):
     # List of methods
@@ -138,7 +138,7 @@ if __name__ == '__main__':
         '-t',
         '--threshold',
         type=int,
-        default=30,
+        default=120,
         help='threshold for method evaluation'
     )
 

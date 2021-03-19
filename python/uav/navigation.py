@@ -237,8 +237,6 @@ class VanishingModule(NavModule):
     # Abstract interface
 
     def run(self, img: Image):
-        img = cv2.resize(img, (320, 180))
-
         # Define bounds, if not defined
         if self.lower is None:
             h, w, _ = img.shape
