@@ -12,8 +12,8 @@ from uav.controllers import AirSimDrone, AirSimDroneNoisy, TelloEDU
 from uav.environment import Environment
 from uav.navigation import (
     NaiveAlgorithm,
-    VisionAlgorithm,
     VanishingAlgorithm,
+    VisionAlgorithm,
     QRCodeAlgorithm
 )
 
@@ -43,8 +43,8 @@ def main(
     # Algorithm
     algorithms = {
         'naive': NaiveAlgorithm,
-        'vision': VisionAlgorithm,
         'vanishing': VanishingAlgorithm,
+        'vision': VisionAlgorithm,
         'qr': QRCodeAlgorithm
     }
 
