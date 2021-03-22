@@ -40,7 +40,6 @@ from plots.latex import plt  # noqa: E402
 def evaluate(
     methods: List[VPDetector],
     json_pth: str,
-    threshold: int,
     output_pth: str
 ):
     """
@@ -53,13 +52,17 @@ def evaluate(
 
     for method in methods:
         results[method.__name__] = 0
-        times[method.__name__] = 0
+        times[method.__name__] = []
 
     # Load evaluation data
     data = []
 
     with open(json_pth, 'r') as json_file:
         data = json.load(json_file)
+
+    # Define threshold
+    w, _ = Image.open(data[0]['image']).size
+    threshold = w // 10
 
     # Evaluate methods on each image
     for d in tqdm(data):
@@ -77,7 +80,10 @@ def evaluate(
             result = 1 if dist < threshold else 0
 
             results[method.__name__] += result
-            times[method.__name__] += end - start
+            times[method.__name__].append(end - start)
+
+    for key, value in times.items():
+        times[key] = np.mean(value)
 
     # Display and export results
     print(results, times)
@@ -109,14 +115,13 @@ def evaluate(
 
 def main(
     json_pth: str = 'data.json',
-    threshold: int = 120,
     outpt_pth: str = 'outputs/'
 ):
     # List of methods
     methods = [VPClassic, VPEdgelets]
 
     # Evaluate
-    evaluate(methods, json_pth, threshold, outpt_pth)
+    evaluate(methods, json_pth, outpt_pth)
 
 
 if __name__ == '__main__':
@@ -135,14 +140,6 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '-t',
-        '--threshold',
-        type=int,
-        default=120,
-        help='threshold for method evaluation'
-    )
-
-    parser.add_argument(
         '-o',
         '--output',
         type=str,
@@ -154,6 +151,5 @@ if __name__ == '__main__':
 
     main(
         json_pth=args.input,
-        threshold=args.threshold,
         outpt_pth=args.output
     )

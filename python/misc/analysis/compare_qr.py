@@ -45,7 +45,7 @@ def evaluate(
 
     for method in methods:
         results[method.__name__] = 0
-        times[method.__name__] = 0
+        times[method.__name__] = []
 
     # Load evaluation data
     data = []
@@ -68,7 +68,10 @@ def evaluate(
             result = 1 if decoded == content else 0
 
             results[method.__name__] += result
-            times[method.__name__] += end - start
+            times[method.__name__].append(end - start)
+
+    for key, value in times.items():
+        times[key] = np.mean(value)
 
     # Display and export results
     print(results, times)
