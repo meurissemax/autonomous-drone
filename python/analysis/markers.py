@@ -1,5 +1,5 @@
 """
-Implementation of QR code detection and decoding methods.
+Implementation of marker (ArUco, QR code) detection and decoding methods.
 """
 
 ###########
@@ -11,6 +11,7 @@ import numpy as np
 import pyzbar.pyzbar as zbar
 
 from abc import ABC, abstractmethod
+from cv2 import aruco
 from typing import List, Tuple, Union
 
 
@@ -26,11 +27,11 @@ Point = List[Union[float, int]]
 # Classes #
 ###########
 
-class QRDecoder(ABC):
+class MarkerDecoder(ABC):
     """
-    Abstract class used to define a QR code (detector and) decoder.
+    Abstract class used to define a marker (detector and) decoder.
 
-    Each QR code decoder must inherit this class.
+    Each marker decoder must inherit this class.
     """
 
     def __init__(self):
@@ -39,8 +40,8 @@ class QRDecoder(ABC):
     @abstractmethod
     def decode(self, img: Image) -> Tuple[str, List[Point]]:
         """
-        Detect and decode the QR code of an image. If there is no QR code in
-        the image, it returns ('None', 'None'), else it returns content and
+        Detect and decode the marker of an image. If there is no marker in the
+        image, it returns ('None', 'None'), else it returns content and
         coordinates of the corners.
 
         Convention for corner coordinates: [bl, br, tr, tl].
@@ -49,7 +50,32 @@ class QRDecoder(ABC):
         pass
 
 
-class QROpenCV(QRDecoder):
+# ArUco
+
+class ArucoOpenCV(MarkerDecoder):
+    """
+    Implementation of an ArUco decoder based on OpenCV ArUco library.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.aruco_dict = aruco.Dictionary_get(aruco.DICT_ARUCO_ORIGINAL)
+
+    # Abstract interface
+
+    def decode(self, img):
+        corners, ids, _ = aruco.detectMarkers(img, self.aruco_dict)
+
+        decoded = None if ids is None else ids[0][0]
+        pts = None if ids is None else [list(p) for p in corners[0][0]]
+
+        return decoded, pts
+
+
+# QR code
+
+class QROpenCV(MarkerDecoder):
     """
     Implementation of a QR code decoder based on OpenCV QR code library.
     """
@@ -79,7 +105,7 @@ class QROpenCV(QRDecoder):
         return decoded, pts
 
 
-class QRZBar(QRDecoder):
+class QRZBar(MarkerDecoder):
     """
     Implementation of a QR code decoder based on ZBar code library.
     """

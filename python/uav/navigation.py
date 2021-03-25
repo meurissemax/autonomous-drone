@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 from functools import partial
 from typing import List, Tuple, Union
 
-from analysis.qr_code import QRZBar
+from analysis.markers import ArucoOpenCV, QRZBar
 from analysis.vanishing_point import VPClassic
 from .controllers import Controller
 from .environment import Environment
@@ -159,8 +159,8 @@ class NavAlgorithm(ABC):
 
 class VisionModule(NavModule):
     """
-    Module that determines probabilities of next action of the drone based on
-    Deep Learning model predictions.
+    Module that determines probabilities of an event based on Deep Learning
+    model predictions.
     """
 
     def __init__(
@@ -347,17 +347,22 @@ class VanishingDLModule(VanishingModule):
         return orientation
 
 
-class QRCodeModule(NavModule):
+class MarkerModule(NavModule):
     """
-    Module that reads the content of a QR code, if any, and returns it along
+    Module that reads the content of a marker, if any, and returns it along
     with coordinates of its corner points.
     """
 
-    def __init__(self, verbose=False):
+    def __init__(self, marker: str, verbose=False):
         super().__init__(verbose)
 
-        # QR code decoder
-        self.decoder = QRZBar()
+        # Marker decoder
+        decoders = {
+            'aruco': ArucoOpenCV,
+            'qr': QRZBar
+        }
+
+        self.decoder = decoders.get(marker)()
 
     # Abstract interface
 
@@ -485,22 +490,22 @@ class VisionAlgorithm(NavAlgorithm):
             self._show(path=self.path, what=['pos', 'obj'])
 
 
-class QRCodeAlgorithm(NavAlgorithm):
+class MarkerAlgorithm(NavAlgorithm):
     """
-    Navigation algorithm based on QR code detection and decoding, vanishing
+    Navigation algorithm based on marker detection and decoding, vanishing
     point detection and environment information.
     """
 
     def __init__(self, env, controller, show=False):
         super().__init__(env, controller, show)
 
-        # Create QR code module
-        self.qr = QRCodeModule(verbose=True)
+        # Create marker module
+        self.qr = MarkerModule(marker='qr', verbose=True)
 
         # Create vanishing point module
         self.vanishing = VanishingCVModule(controller=controller, verbose=True)
 
-        # Threshold on QR code size
+        # Threshold on marker size
         self.threshold = 140
 
     # Abstract interface
@@ -510,17 +515,17 @@ class QRCodeAlgorithm(NavAlgorithm):
         keypoints = self.env.extract_keypoints(self.path, self.sequence)
         idx = 0
 
-        # Execute actions, guided by QR codes
+        # Execute actions, guided by markers
         while not self.env.has_reached_obj():
             img = self.controller.picture()
 
             # Align drone with vanishing point
             self.vanishing.run(img=img)
 
-            # Decode QR code, if any
+            # Decode marker, if any
             decoded, pts = self.qr.run(img=img)
 
-            # Compute QR code size
+            # Compute marker size
             size = 0 if pts is None else math.dist(pts[0], pts[2])
 
             # Check if it is a turn or not

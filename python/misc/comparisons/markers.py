@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Implementation of the evaluation process of the different QR code decoding
+Implementation of the evaluation process of the different marker decoding
 methods.
 """
 
@@ -23,7 +23,13 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(os.path.dirname(current))
 sys.path.append(parent)
 
-from analysis.qr_code import QRDecoder, QROpenCV, QRZBar  # noqa: E402
+from analysis.markers import (  # noqa: E402
+    MarkerDecoder,
+    ArucoOpenCV,
+    QROpenCV,
+    QRZBar
+)
+
 from plots.latex import plt  # noqa: E402
 
 
@@ -32,12 +38,12 @@ from plots.latex import plt  # noqa: E402
 #############
 
 def evaluate(
-    methods: List[QRDecoder],
+    methods: List[MarkerDecoder],
     json_pth: str,
     output_pth: str
 ):
     """
-    Evaluate a serie of QR code decoders by running them on some truth images.
+    Evaluate a serie of marker decoders by running them on some truth images.
     """
 
     # Initialize
@@ -65,7 +71,7 @@ def evaluate(
             decoded, _ = method().decode(img)
             end = time.time()
 
-            result = 1 if decoded == content else 0
+            result = 1 if str(decoded) == content else 0
 
             results[method.__name__] += result
             times[method.__name__].append(end - start)
@@ -102,11 +108,17 @@ def evaluate(
 ########
 
 def main(
+    marker_id: str = 'aruco',
     json_pth: str = 'data.json',
     outpt_pth: str = 'outputs/'
 ):
     # List of methods
-    methods = [QROpenCV, QRZBar]
+    lists = {
+        'aruco': [ArucoOpenCV],
+        'qr': [QROpenCV, QRZBar]
+    }
+
+    methods = lists.get(marker_id)
 
     # Evaluate
     evaluate(methods, json_pth, outpt_pth)
@@ -116,7 +128,16 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Evaluate QR code decoders.'
+        description='Evaluate marker decoders.'
+    )
+
+    parser.add_argument(
+        '-m',
+        '--marker',
+        type=str,
+        default='aruco',
+        choices=['aruco', 'qr'],
+        help='Marker decoders to evaluate'
     )
 
     parser.add_argument(
@@ -138,6 +159,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(
+        marker_id=args.marker,
         json_pth=args.input,
         outpt_pth=args.output
     )

@@ -14,7 +14,7 @@ from uav.navigation import (
     NaiveAlgorithm,
     VanishingAlgorithm,
     VisionAlgorithm,
-    QRCodeAlgorithm
+    MarkerAlgorithm
 )
 
 
@@ -45,7 +45,7 @@ def main(
         'naive': NaiveAlgorithm,
         'vanishing': VanishingAlgorithm,
         'vision': VisionAlgorithm,
-        'qr': QRCodeAlgorithm
+        'marker': MarkerAlgorithm
     }
 
     algorithm = algorithms.get(algorithm_id)
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         '--algorithm',
         type=str,
         default='naive',
-        choices=['naive', 'vision', 'vanishing', 'qr'],
+        choices=['naive', 'vanishing', 'vision', 'marker'],
         help='navigation algorithm to use'
     )
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Implementation of some tests on the QR code decoding methods.
+Implementation of some tests on the marker decoding methods.
 """
 
 ###########
@@ -16,7 +16,7 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(os.path.dirname(current))
 sys.path.append(parent)
 
-from analysis.qr_code import QROpenCV, QRZBar  # noqa: E402
+from analysis.markers import ArucoOpenCV, QROpenCV, QRZBar  # noqa: E402
 
 
 ########
@@ -24,13 +24,14 @@ from analysis.qr_code import QROpenCV, QRZBar  # noqa: E402
 ########
 
 def main(
-    method_id: str = 'opencv',
-    input_pth: str = 'qr.png'
+    method_id: str = 'aruco_opencv',
+    input_pth: str = 'marker.png'
 ):
     # Load method
     methods = {
-        'opencv': QROpenCV,
-        'zbar': QRZBar
+        'aruco_opencv': ArucoOpenCV,
+        'qr_opencv': QROpenCV,
+        'qr_zbar': QRZBar
     }
 
     method = methods.get(method_id)()
@@ -38,14 +39,14 @@ def main(
     # Open image
     img = cv2.imread(input_pth)
 
-    # Decode QR code, if any
+    # Decode marker, if any
     decoded, pts = method.decode(img)
 
     # Display result
     if decoded is None:
-        print('No QR code detected.')
+        print('No marker detected.')
     else:
-        print('QR code detected!')
+        print('Marker detected!')
         print(f'Content: {decoded}')
         print(f'Corners: {pts}')
 
@@ -54,15 +55,15 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Test QR code detecting and decoding methods.'
+        description='Test marker detecting and decoding methods.'
     )
 
     parser.add_argument(
         '-m',
         '--method',
         type=str,
-        default='opencv',
-        choices=['opencv', 'zbar'],
+        default='aruco_opencv',
+        choices=['aruco_opencv', 'qr_opencv', 'qr_zbar'],
         help='method to use'
     )
 
@@ -70,7 +71,7 @@ if __name__ == '__main__':
         '-i',
         '--input',
         type=str,
-        default='qr.png',
+        default='marker.png',
         help='path to input file'
     )
 

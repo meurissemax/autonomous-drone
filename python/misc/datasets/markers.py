@@ -2,7 +2,7 @@
 
 """
 Implementation of tools used to generate data sets (a serie of annotated
-images) for QR code decoding methods.
+images) for marker decoding methods.
 """
 
 ###########
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Data set generation tools for QR code decoding methods.'
+        description='Data set generation tools for marker decoding methods.'
     )
 
     parser.add_argument(
@@ -81,7 +81,7 @@ if __name__ == '__main__':
         '--content',
         type=str,
         default='',
-        help='content of the QR codes'
+        help='content of the markers'
     )
 
     parser.add_argument(
