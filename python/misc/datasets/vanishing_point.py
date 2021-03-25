@@ -14,6 +14,7 @@ import glob
 import json
 import os
 
+from tqdm import tqdm
 from typing import Dict, List
 
 
@@ -71,7 +72,7 @@ def annotate(inpt_pth: str) -> Dataset:
     cv2.namedWindow('Image')
 
     # Annotate each image
-    for img_pth in imgs_pth:
+    for img_pth in tqdm(imgs_pth):
         img = cv2.imread(img_pth)
 
         cv2.setMouseCallback('Image', _on_click, img)

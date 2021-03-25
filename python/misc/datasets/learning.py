@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Implementation of tools used to generate data sets (annotate images and split
-intro training and testing sets) for Deep Learning methods.
+Implementation of tools used to generate data sets for Deep Learning methods.
 
 Input images can be annotated using either target values associated to them
 (using intervals) or target images.
@@ -21,7 +20,6 @@ to the first image in the target folder, etc.
 import glob
 import json
 import os
-import random
 
 from tqdm import tqdm
 from typing import Dict, List, Tuple
@@ -146,38 +144,6 @@ def annotate(inpt_pth: str, trgt_pth: str = None) -> Dataset:
     return annotations
 
 
-def split(dataset: Dataset, ratio: int) -> Tuple[Dataset, Dataset]:
-    """
-    Split a data set into training and testing sets.
-    """
-
-    n = len(dataset)
-
-    # Get indexes of training items
-    n_train = int(n * max(0, min(ratio, 1)))
-    idxs_train = random.sample(range(n), n_train)
-
-    # Get indexes of testing items
-    idxs_test = [i for i in range(n) if i not in idxs_train]
-
-    # Create training and testing sets
-    train = [dataset[idx] for idx in idxs_train]
-    test = [dataset[idx] for idx in idxs_test]
-
-    return train, test
-
-
-def export(dataset: Dataset, json_pth: str, fname: str):
-    """
-    Export a data set to a JSON file.
-    """
-
-    pth = os.path.join(json_pth, fname)
-
-    with open(pth, 'w') as json_file:
-        json.dump(dataset, json_file, indent=4)
-
-
 ########
 # Main #
 ########
@@ -185,18 +151,14 @@ def export(dataset: Dataset, json_pth: str, fname: str):
 def main(
     inpt_pth: str = 'inputs/',
     trgt_pth: str = None,
-    ratio: int = 0.7,
-    json_pth: str = 'dataset/'
+    outpt_pth: str = 'dataset.json'
 ):
     # Get annotations
     annotations = annotate(inpt_pth, trgt_pth)
 
-    # Split data set
-    train, test = split(annotations, ratio)
-
-    # Export sets
-    export(train, json_pth, 'train.json')
-    export(test, json_pth, 'test.json')
+    # Export data set
+    with open(outpt_pth, 'w') as json_file:
+        json.dump(annotations, json_file, indent=4)
 
 
 if __name__ == '__main__':
@@ -223,19 +185,11 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        '-r',
-        '--ratio',
-        type=float,
-        default=0.7,
-        help='ratio of the training set'
-    )
-
-    parser.add_argument(
-        '-j',
-        '--json',
+        '-o',
+        '--output',
         type=str,
-        default='dataset/',
-        help='path to export JSON files'
+        default='dataset.json',
+        help='path to export JSON file'
     )
 
     args = parser.parse_args()
@@ -243,6 +197,5 @@ if __name__ == '__main__':
     main(
         inpt_pth=args.inputs,
         trgt_pth=args.targets,
-        ratio=args.ratio,
-        json_pth=args.json
+        outpt_pth=args.output
     )
