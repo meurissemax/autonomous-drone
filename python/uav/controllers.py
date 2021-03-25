@@ -129,7 +129,7 @@ class AirSimDrone(Controller):
 
         if landed == airsim.LandedState.Landed:
             self.client.takeoffAsync().join()
-            self.move('down', 80, 50)
+            self.move('down', 50, 50)
 
     def land(self):
         landed = self.state().landed_state
@@ -153,13 +153,15 @@ class AirSimDrone(Controller):
         speed /= 100
         duration = (distance / 100) / speed
 
+        z = self.state().kinematics_estimated.position.z_val
+
         directions = {
             'up': [0, 0, -speed, duration],
             'down': [0, 0, speed, duration],
-            'left': [0, -speed, 0, duration],
-            'right': [0, speed, 0, duration],
-            'forward': [speed, 0, 0, duration],
-            'back': [-speed, 0, 0, duration]
+            'left': [0, -speed, z, duration],
+            'right': [0, speed, z, duration],
+            'forward': [speed, 0, z, duration],
+            'back': [-speed, 0, z, duration]
         }
 
         factors = directions.get(direction)
@@ -173,21 +175,7 @@ class AirSimDrone(Controller):
             if direction in ['up', 'down']:
                 self.client.moveByVelocityBodyFrameAsync(*factors).join()
             else:
-                kinematics = self.state().kinematics_estimated
-
-                z = kinematics.position.z_val
-                q = kinematics.orientation
-
-                _, _, yaw = airsim.to_eularian_angles(q)
-
-                vx, vy = factors[0], factors[1]
-
-                vx_new = vx * np.cos(yaw) - vy * np.sin(yaw)
-                vy_new = vx * np.sin(yaw) + vy * np.cos(yaw)
-
-                factors = [vx_new, vy_new, z, duration]
-
-                self.client.moveByVelocityZAsync(*factors).join()
+                self.client.moveByVelocityZBodyFrameAsync(*factors).join()
 
     def rotate(self, direction, angle):
         error = False
