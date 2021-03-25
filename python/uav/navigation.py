@@ -157,70 +157,6 @@ class NavAlgorithm(ABC):
 
 # Modules
 
-class VanishingModule(NavModule):
-    """
-    Module that adjusts the drone by estimating its alignment based on a
-    vanishing point detection method.
-    """
-
-    def __init__(self, controller: Controller, verbose=False):
-        super().__init__(verbose)
-
-        # Controller
-        self.controller = controller
-
-        # Vanishing point detector
-        self.method = VPClassic()
-
-        # Bounds
-        self.lower, self.upper = None, None
-
-        # Define adjustment actions
-        self.adjustments = {
-            'left': partial(self.controller.rotate, 'cw', 5),
-            'right': partial(self.controller.rotate, 'ccw', 5)
-        }
-
-    # Specific
-
-    def _alignment(self, img: Image) -> str:
-        # Define bounds, if not defined
-        if self.lower is None:
-            h, w, _ = img.shape
-            mean, std = w / 2, w / 20
-
-            self.lower = (mean - 2 * std, mean - std)
-            self.upper = (mean + std, mean + 2 * std)
-
-        # Detect vanishing point
-        x, _ = self.method.detect(img)
-
-        # Get orientation
-        orientation = 'center'
-
-        if self.upper[0] < x < self.upper[1]:
-            orientation = 'right'
-        elif self.lower[0] < x < self.lower[1]:
-            orientation = 'left'
-
-        self.log(f'Orientation: {orientation}')
-
-        return orientation
-
-    # Abstract interface
-
-    def run(self, img: Image):
-        while True:
-            alignment = self._alignment(img)
-
-            if alignment == 'center':
-                break
-
-            self.adjustments.get(alignment)()
-
-            img = self.controller.picture()
-
-
 class VisionModule(NavModule):
     """
     Module that determines probabilities of next action of the drone based on
@@ -259,6 +195,10 @@ class VisionModule(NavModule):
 
         self.model = model
 
+        # GPU warm-up
+        for _ in range(10):
+            _ = self.model(torch.randn(3, 180, 320).to(self.device))
+
         # Processing
         self.process = transforms.Compose([
             lambda x: cv2.resize(x, (320, 180)),
@@ -280,6 +220,131 @@ class VisionModule(NavModule):
             self.log(f'Prediction: {pred}')
 
             return pred.tolist()
+
+
+class VanishingModule(NavModule):
+    """
+    Abstract class used to define navigation module that works with vanishing
+    point.
+    """
+
+    def __init__(self, controller: Controller, verbose=False):
+        super().__init__(verbose)
+
+        # Controller
+        self.controller = controller
+
+        # Define adjustment actions
+        self.adjustments = {
+            'left': partial(self.controller.rotate, 'cw', 5),
+            'right': partial(self.controller.rotate, 'ccw', 5)
+        }
+
+    @abstractmethod
+    def _alignment(self, img: Image) -> str:
+        """
+        Determine the orientation of the drone (left, right or center) based on
+        an image.
+        """
+
+        pass
+
+    # Abstract interface of parent class
+
+    def run(self, img: Image):
+        while True:
+            alignment = self._alignment(img)
+
+            if alignment == 'center':
+                break
+
+            self.adjustments.get(alignment)()
+
+            img = self.controller.picture()
+
+
+class VanishingCVModule(VanishingModule):
+    """
+    Module that adjusts the drone by estimating its alignment based on a
+    vanishing point detection using pure computer vision method.
+    """
+
+    def __init__(self, controller, verbose=False):
+        super().__init__(controller, verbose)
+
+        # Vanishing point detector
+        self.method = VPClassic()
+
+        # Bounds
+        self.lower, self.upper = None, None
+
+    # Abstract interface
+
+    def _alignment(self, img):
+        # Define bounds, if not defined
+        if self.lower is None:
+            h, w, _ = img.shape
+            mean, std = w / 2, w / 20
+
+            self.lower = (mean - 2 * std, mean - std)
+            self.upper = (mean + std, mean + 2 * std)
+
+        # Detect vanishing point
+        x, _ = self.method.detect(img)
+
+        # Get orientation
+        orientation = 'center'
+
+        if self.upper[0] < x < self.upper[1]:
+            orientation = 'right'
+        elif self.lower[0] < x < self.lower[1]:
+            orientation = 'left'
+
+        self.log(f'Orientation: {orientation}')
+
+        return orientation
+
+
+class VanishingDLModule(VanishingModule):
+    """
+    Module that adjusts the drone by estimating its alignment based on a
+    vanishing point detection using Deep Learning method.
+    """
+
+    def __init__(
+        self,
+        grid_size: int,
+        model_id: str,
+        weights_pth: str,
+        controller,
+        verbose=False
+    ):
+        super().__init__(controller, verbose)
+
+        # Vision module
+        self.vision = VisionModule(grid_size, model_id, weights_pth, False)
+
+        # Define middle cell
+        self.middle = math.floor(grid_size / 2)
+
+    # Abstract interface
+
+    def _alignment(self, img):
+        # Get cell that contains vanishing point
+        pred = self.vision.run(img)
+        cell = pred.index(max(pred))
+
+        # Get orientation
+        orientation = 'center'
+
+        if cell == self.middle + 1:
+            orientation = 'right'
+        elif cell == self.middle - 1:
+            orientation = 'left'
+
+        self.log(f'Orientation: {orientation}')
+
+        return orientation
 
 
 class QRCodeModule(NavModule):
@@ -340,7 +405,7 @@ class VanishingAlgorithm(NavAlgorithm):
         super().__init__(env, controller, show)
 
         # Create vanishing point module
-        self.vanishing = VanishingModule(controller=controller, verbose=True)
+        self.vanishing = VanishingCVModule(controller=controller, verbose=True)
 
         # List turn actions
         self.turn_actions = ['left', 'right']
@@ -381,7 +446,7 @@ class VisionAlgorithm(NavAlgorithm):
         )
 
         # Create vanishing point module
-        self.vanishing = VanishingModule(controller=controller, verbose=True)
+        self.vanishing = VanishingCVModule(controller=controller, verbose=True)
 
         # Threshold of confidence
         self.threshold = 0.85
@@ -433,7 +498,7 @@ class QRCodeAlgorithm(NavAlgorithm):
         self.qr = QRCodeModule(verbose=True)
 
         # Create vanishing point module
-        self.vanishing = VanishingModule(controller=controller, verbose=True)
+        self.vanishing = VanishingCVModule(controller=controller, verbose=True)
 
         # Threshold on QR code size
         self.threshold = 140

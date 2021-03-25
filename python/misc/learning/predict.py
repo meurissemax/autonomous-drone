@@ -10,6 +10,8 @@ This procedure is used to test a model on one specific input.
 # Imports #
 ###########
 
+import cv2
+import math
 import numpy as np
 import os
 import sys
@@ -18,6 +20,7 @@ import torch
 import torchvision.transforms as transforms
 
 from functools import partial
+from itertools import product
 from PIL import Image
 
 current = os.path.dirname(os.path.realpath(__file__))
@@ -26,6 +29,45 @@ sys.path.append(parent)
 
 from learning.datasets import to_edges  # noqa: E402
 from learning.models import DenseNet, SmallConvNet, UNet  # noqa: E402
+
+
+#############
+# Functions #
+#############
+
+def _vanishing(input_pth: str, outpt: torch.tensor) -> np.array:
+    """
+    Draw grid on an image and color in green the cell that contains the
+    vanishing point.
+    """
+
+    # Read image
+    img = cv2.imread(input_pth)
+    h, w, _ = img.shape
+
+    # Cell with vanishing point
+    vp = torch.argmax(outpt).item()
+
+    # Dimensions of each cell
+    n = int(math.sqrt(torch.numel(outpt)))
+    cell = (w // n, h // n)
+
+    # Draw each cell
+    for idx, (j, i) in enumerate(product(range(n), range(n))):
+        left = i * cell[0]
+        right = (i + 1) * cell[0]
+        bottom = j * cell[1]
+        top = (j + 1) * cell[1]
+
+        if idx == vp:
+            vp_cell = [(left, bottom), (right, top)]
+
+        cv2.rectangle(img, (left, bottom), (right, top), (0, 0, 255), 2)
+
+    # Draw vanishing point cell
+    cv2.rectangle(img, vp_cell[0], vp_cell[1], (0, 255, 0), 2)
+
+    return img
 
 
 ########
@@ -38,7 +80,8 @@ def main(
     model_id: str = 'densenet121',
     out_channels: int = 2,
     weights_pth: str = 'weights.pth',
-    output_pth: str = 'output.png'
+    output_pth: str = 'output.png',
+    vanishing: bool = False
 ):
     # Device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -110,6 +153,8 @@ def main(
         print(f'Inference time (std): {np.std(times)}')
 
         # Exportation
+        outpt = outpt.squeeze(0).cpu()
+
         actions = {
             'densenet121': 'print',
             'densenet161': 'print',
@@ -122,11 +167,15 @@ def main(
         if action == 'print':
             print(f'Output: {outpt}')
         elif action == 'export':
-            outpt = outpt.squeeze(0).cpu()
             outpt = torch.argmax(outpt, dim=0)
             outpt = outpt.to(dtype=torch.uint8).numpy()
             outpt = Image.fromarray(outpt)
             outpt.save(output_pth)
+
+        # Vanishing point
+        if vanishing:
+            img = _vanishing(input_pth, outpt)
+            cv2.imwrite(output_pth, img)
 
 
 if __name__ == '__main__':
@@ -185,6 +234,14 @@ if __name__ == '__main__':
         help='path to output file'
     )
 
+    parser.add_argument(
+        '-v',
+        '--vanishing',
+        action='store_true',
+        default=False,
+        help='whether to export vanishing point visualization or not'
+    )
+
     args = parser.parse_args()
 
     main(
@@ -193,5 +250,6 @@ if __name__ == '__main__':
         model_id=args.model,
         out_channels=args.channels,
         weights_pth=args.weights,
-        output_pth=args.output
+        output_pth=args.output,
+        vanishing=args.vanishing
     )
