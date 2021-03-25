@@ -10,6 +10,7 @@ This procedure is used to test a model on one specific input.
 # Imports #
 ###########
 
+import numpy as np
 import os
 import sys
 import time
@@ -79,19 +80,34 @@ def main(
 
     print(f'Number of parameters: {n_params}')
 
+    # Init logger
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+
+    n_passes = 100
+    times = np.zeros((n_passes, 1))
+
     # Prediction
     with torch.no_grad():
         inpt = inpt.to(device)
 
-        torch.cuda.synchronize()
-        tstart = time.time()
+        # GPU warm-up
+        for _ in range(10):
+            _ = model(inpt)
 
-        outpt = model(inpt)
+        # Compute inference time
+        for idx in range(n_passes):
+            start.record()
+            outpt = model(inpt)
+            end.record()
 
-        torch.cuda.synchronize()
-        tend = time.time()
+            torch.cuda.synchronize()
 
-        print(f'Inference time: {tend - tstart}')
+            time = start.elapsed_time(end)
+            times[idx] = time
+
+        print(f'Inference time (mean): {np.mean(times) / n_passes}')
+        print(f'Inference time (std): {np.std(times)}')
 
         # Exportation
         actions = {
