@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Implementation of a tool used to horizontally flip images (and save them as
-# new images in new folders).
+# new images in a new folder '<dir_name>/flipped/').
 #
 # Usage: bash hflip.sh <dir_name>
 
@@ -25,15 +25,13 @@ DIR=$1
 
 count=0
 
-for d in ${DIR}/*; do
-    mkdir -p ${d}-flipped
+mkdir -p ${DIR}flipped
 
-    for f in ${d}/*.png; do
-        base=$(basename -- "$f")
-        base="${base%.*}"
+for f in ${DIR}*.png; do
+    base=$(basename -- "$f")
+    base="${base%.*}"
 
-        convert -flop $f ${d}-flipped/flipped_${base}_$count.png
+    convert -flop $f ${DIR}flipped/flipped_${base}_$count.png
 
-        count=$((count + 1))
-    done
+    count=$((count + 1))
 done

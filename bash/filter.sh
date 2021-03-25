@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Implementation of a tool used to delete images. The script keep one image
-# over 'keep' and delete the others.
+# over '<keep>' and delete the others.
 #
 # Usage: bash filter.sh <dir_name> <keep>
 
@@ -26,15 +26,13 @@ keep=$2
 # Main #
 ########
 
-for d in ${DIR}/*; do
-    count=0
+count=0
 
-    for f in ${d}/*.png; do
-        mod=$((count % keep))
-        count=$((count + 1))
+for f in ${DIR}*.png; do
+    mod=$((count % keep))
+    count=$((count + 1))
 
-        if [ $mod != 0 ]; then
-            rm $f
-        fi
-    done
+    if [ $mod != 0 ]; then
+        rm $f
+    fi
 done
