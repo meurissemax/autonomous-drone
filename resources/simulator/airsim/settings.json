@@ -17,6 +17,11 @@
                 "ImageType": 0,
                 "Width": 1280,
                 "Height": 720
+            },
+            {
+                "ImageType": 2,
+                "Width": 320,
+                "Height": 180
             }
         ]
     }

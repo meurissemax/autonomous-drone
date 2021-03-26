@@ -374,6 +374,38 @@ class MarkerModule(NavModule):
         return decoded, pts
 
 
+class DepthModule(NavModule):
+    """
+    Module that infers depth map associated to an image and compute distance to
+    element in front of the drone.
+
+    For the moment, in order to perform tests, the module works DIRECTLY with a
+    ground truth depth map obtained via AirSim.
+    """
+
+    def __init__(self, verbose=False):
+        super().__init__(verbose)
+
+    # Abstract interface
+
+    def run(self, img: Image) -> float:
+        # Dimensions
+        h, w = img.shape
+
+        # Crop the image to keep center box
+        mx, my = w // 2, h // 2
+        dx, dy = w // 10, h // 10
+
+        cropped = img[(mx - dx):(mx + dx), (my - dy):(my + dy)]
+
+        # Compute distance
+        distance = np.mean(cropped)
+
+        self.log(f'Distance: {distance}')
+
+        return distance
+
+
 # Navigation algorithms
 
 class NaiveAlgorithm(NavAlgorithm):
@@ -530,6 +562,58 @@ class MarkerAlgorithm(NavAlgorithm):
 
             # Check if it is a turn or not
             if decoded == 'turn' and size > self.threshold:
+                action, pos = keypoints[idx]
+                idx += 1
+
+                self.env.update(pos, action)
+            else:
+                action = 'forward'
+
+                self.env.move(action)
+
+            self.actions.get(action)(self.steps.get(action))
+
+            # Show updated environment
+            self._show(path=self.path, what=['pos', 'obj'])
+
+
+class DepthAlgorithm(NavAlgorithm):
+    """
+    Navigation algorithm based on depth map (and so, approximate distances to
+    elements) associated to an image.
+    """
+
+    def __init__(self, env, controller, show=False):
+        super().__init__(env, controller, show)
+
+        # Create depth module
+        self.depth = DepthModule(verbose=True)
+
+        # Create vanishing point module
+        self.vanishing = VanishingCVModule(controller=controller, verbose=True)
+
+        # Threshold on distance
+        self.threshold = 1.5
+
+    # Abstract interface
+
+    def _execute(self):
+        # Get key points
+        keypoints = self.env.extract_keypoints(self.path, self.sequence)
+        idx = 0
+
+        # Execute actions based on predictions
+        while not self.env.has_reached_obj():
+            img = self.controller.picture()
+
+            # Align drone with vanishing point
+            # self.vanishing.run(img=img)
+
+            # Get distance to the element in front of the drone
+            distance = self.depth.run(img=img)
+
+            # Check if it is a turn or not
+            if distance < self.threshold:
                 action, pos = keypoints[idx]
                 idx += 1
 

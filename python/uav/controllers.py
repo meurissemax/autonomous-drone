@@ -207,19 +207,43 @@ class AirSimDrone(Controller):
         self.client.hoverAsync().join()
 
     def picture(self):
+        # Define possible image types. Depth image are only use for test
+        # purpose. It is, of course, impossible to have direclty perfect
+        # depth image in reality.
+        image_type = 'scene'
+
+        kwargs = {
+            'scene': {
+                'image_type': 0,
+                'pixels_as_float': False,
+                'compress': False
+            },
+            'depth': {
+                'image_type': 2,
+                'pixels_as_float': True
+            }
+        }
+
+        # Take picture
         pictures = self.client.simGetImages([
             airsim.ImageRequest(
                 camera_name='front_center',
-                image_type=airsim.ImageType.Scene,
-                pixels_as_float=False,
-                compress=False
+                **kwargs[image_type]
             )
         ])
         picture = pictures[0]
 
-        image = airsim.string_to_uint8_array(picture.image_data_uint8)
-        image = image.reshape(picture.height, picture.width, 3)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # Process data
+        if kwargs[image_type]['pixels_as_float']:
+            image = airsim.list_to_2d_float_array(
+                picture.image_data_float,
+                picture.width,
+                picture.height
+            )
+        else:
+            image = airsim.string_to_uint8_array(picture.image_data_uint8)
+            image = image.reshape(picture.height, picture.width, 3)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         return image
 
