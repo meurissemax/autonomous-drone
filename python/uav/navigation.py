@@ -406,6 +406,59 @@ class DepthModule(NavModule):
         return distance
 
 
+class StaircaseModule(NavModule):
+    """
+    Module that moves the drone in a staircase (up or down) based on an image.
+    """
+
+    def __init__(self, controller: Controller, direction: str, verbose=False):
+        super().__init__(verbose)
+
+        # Controller
+        self.controller = controller
+
+        # Direction
+        self.direction = direction
+
+        # Depth module
+        self.depth = DepthModule(False)
+
+        # Threshold on distance
+        self.threshold = 1
+
+        # Limit to consider the staircase
+        self.limit = 2
+
+        # Define staircase actions
+        self.staircase = {
+            'up': partial(self.controller.move, 'up', 30),
+            'down': partial(self.controller.move, 'down', 30),
+            'forward': partial(self.controller.move, 'forward', 30)
+        }
+
+    # Abstract interface
+
+    def run(self, img: Image):
+        while True:
+            # Get distance to staircase
+            distance = self.depth.run(img=img)
+
+            self.log(f'Distance: {distance}')
+
+            # Check limit
+            if distance > self.limit:
+                break
+
+            # Move the drone, according to distance
+            if distance < self.threshold:
+                self.staircase.get(self.direction)()
+            else:
+                self.staircase.get('forward')()
+
+            # Take a new picture
+            img = self.controller.picture()
+
+
 # Navigation algorithms
 
 class NaiveAlgorithm(NavAlgorithm):
@@ -593,7 +646,7 @@ class DepthAlgorithm(NavAlgorithm):
         self.vanishing = VanishingCVModule(controller=controller, verbose=True)
 
         # Threshold on distance
-        self.threshold = 1.5
+        self.threshold = 2
 
     # Abstract interface
 

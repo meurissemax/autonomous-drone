@@ -477,6 +477,12 @@ class Environment:
         Check if a point of the environment is a key point.
         """
 
+        # Check if point is a staircase
+        staircases = [spos for _, spos in self.staircases]
+
+        if p in staircases:
+            return True
+
         # Get neighbors of the point
         neighbors = list(self._neighbors(p).values())
 
