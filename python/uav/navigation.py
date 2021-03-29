@@ -16,11 +16,11 @@ from abc import ABC, abstractmethod
 from functools import partial
 from typing import List, Tuple, Union
 
-from analysis.markers import ArucoOpenCV, QRZBar
-from analysis.vanishing_point import VPClassic
+from analysis.markers import ArucoOpenCV, QROpenCV, QRZBar
+from analysis.vanishing_point import VPClassic, VPEdgelets
 from .controllers import Controller
 from .environment import Environment
-from learning.models import DenseNet, SmallConvNet
+from learning.models import DenseNet, SmallConvNet, UNet
 
 
 ##########
@@ -34,7 +34,9 @@ Image = np.array
 # Classes #
 ###########
 
-# Abstract classes
+# Modules
+
+# - Abstract class
 
 class NavModule(ABC):
     """
@@ -70,6 +72,346 @@ class NavModule(ABC):
         pass
 
 
+# - Analysis
+
+class VanishingModule(NavModule):
+    """
+    Abstract class used to define navigation module that works with vanishing
+    point.
+    """
+
+    def __init__(self, controller: Controller, verbose=False):
+        super().__init__(verbose)
+
+        self.controller = controller
+
+        # Define adjustment actions
+        self.adjustments = {
+            'left': partial(self.controller.rotate, 'cw', 5),
+            'right': partial(self.controller.rotate, 'ccw', 5)
+        }
+
+    @abstractmethod
+    def _alignment(self, img: Image) -> str:
+        """
+        Determine the alignment of the drone (left, right or center) based on
+        an image.
+        """
+
+        pass
+
+    # Abstract interface of parent class
+
+    def run(self, img: Image):
+        while True:
+            alignment = self._alignment(img)
+
+            if alignment == 'center':
+                break
+
+            self.adjustments.get(alignment)()
+
+            img = self.controller.picture()
+
+
+class AnalysisVanishingModule(VanishingModule):
+    """
+    Module that adjusts the drone by estimating its alignment based on a
+    vanishing point detection using pure computer vision method.
+    """
+
+    def __init__(self, detector_id: str, controller, verbose=False):
+        super().__init__(controller, verbose)
+
+        # Vanishing point detector
+        detectors = {
+            'classic': VPClassic,
+            'edgelets': VPEdgelets
+        }
+
+        self.detector = detectors.get(detector_id)()
+
+        # Bounds
+        self.lower, self.upper = None, None
+
+    # Abstract interface
+
+    def _alignment(self, img):
+        # Define bounds, if not defined
+        if self.lower is None:
+            h, w, _ = img.shape
+            mean, std = w / 2, w / 25
+
+            self.lower = (mean - 4 * std, mean - std)
+            self.upper = (mean + std, mean + 4 * std)
+
+        # Detect vanishing point
+        x, _ = self.detector.detect(img)
+
+        # Get alignment
+        alignment = 'center'
+
+        if self.upper[0] < x < self.upper[1]:
+            alignment = 'left'
+        elif self.lower[0] < x < self.lower[1]:
+            alignment = 'right'
+
+        self.log(f'Alignment: {alignment}')
+
+        return alignment
+
+
+class MarkerModule(NavModule):
+    """
+    Module that reads the content of a marker, if any, and returns it along
+    with coordinates of its corner points.
+    """
+
+    def __init__(self, decoder_id: str, verbose=False):
+        super().__init__(verbose)
+
+        # Marker decoder
+        decoders = {
+            'aruco_opencv': ArucoOpenCV,
+            'qr_opencv': QROpenCV,
+            'qr_zbar': QRZBar
+        }
+
+        self.decoder = decoders.get(decoder_id)()
+
+    # Abstract interface
+
+    def run(self, img: Image) -> Tuple[str, List]:
+        decoded, pts = self.decoder.decode(img)
+
+        self.log(f'Decoded: {decoded}')
+
+        return decoded, pts
+
+
+# - Deep Learning
+
+class DeepModule(NavModule):
+    """
+    Module that returns the output of a neural network using an image from the
+    drone as input.
+    """
+
+    def __init__(
+        self,
+        n_channels: int,
+        model_id: str,
+        weights_pth: str,
+        verbose=False
+    ):
+        super().__init__(verbose)
+
+        # Device
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        torch.backends.cudnn.enabled = True
+        torch.backends.cudnn.benchmark = True
+
+        self.device = device
+
+        self.log(f'Device: {device}')
+
+        # Model
+        models = {
+            'densenet121': partial(DenseNet, densenet_id='121'),
+            'densenet161': partial(DenseNet, densenet_id='161'),
+            'small': SmallConvNet,
+            'unet': UNet
+        }
+
+        model = models.get(model_id)(3, n_channels)
+        model = model.to(device)
+        model.load_state_dict(torch.load(weights_pth, map_location=device))
+        model.eval()
+
+        self.model = model
+
+        # GPU warm-up
+        with torch.no_grad():
+            for _ in range(10):
+                _ = self.model(torch.randn(1, 3, 180, 320).to(self.device))
+
+        # Processing
+        self.preprocess = transforms.Compose([
+            lambda x: cv2.resize(x, (320, 180)),
+            transforms.ToTensor()
+        ])
+
+        self.to_list = transforms.Compose([
+            lambda x: torch.flatten(x),
+            lambda x: x.numpy()
+        ])
+
+        self.to_img = transforms.Compose([
+            transforms.ToPILImage(),
+            lambda x: np.array(x)
+        ])
+
+    # Abstract interface
+
+    def run(self, img: Image) -> np.array:
+        img = self.preprocess(img)
+
+        with torch.no_grad():
+            img = img.unsqueeze(0)
+            img = img.to(self.device)
+
+            pred = self.model(img).cpu()
+            pred = self.to_img(pred) if pred.dim() == 3 else self.to_list(pred)
+
+            self.log(f'Prediction: {pred}')
+
+            return pred
+
+
+class DeepVanishingModule(VanishingModule):
+    """
+    Module that adjusts the drone by estimating its alignment based on a
+    vanishing point detection using Deep Learning method.
+    """
+
+    def __init__(
+        self,
+        grid_size: int,
+        model_id: str,
+        weights_pth: str,
+        controller,
+        verbose=False
+    ):
+        super().__init__(controller, verbose)
+
+        # Deep module
+        self.deep = DeepModule(
+            n_channels=grid_size,
+            model_id=model_id,
+            weights_pth=weights_pth,
+            verbose=False
+        )
+
+        # Define middle cell
+        self.middle = math.floor(grid_size / 2)
+
+    # Abstract interface
+
+    def _alignment(self, img):
+        # Get cell that contains vanishing point
+        pred = self.deep.run(img)
+        cell = np.argmax(pred)
+
+        # Get alignment
+        alignment = 'center'
+
+        if cell == self.middle + 1:
+            alignment = 'left'
+        elif cell == self.middle - 1:
+            alignment = 'right'
+
+        self.log(f'Alignment: {alignment}')
+
+        return alignment
+
+
+class DepthModule(NavModule):
+    """
+    Module that infers depth map associated to an image and compute distance to
+    element in front of the drone.
+
+    For the moment, in order to perform tests, the module works DIRECTLY with a
+    ground truth depth map obtained via AirSim.
+    """
+
+    def __init__(self, verbose=False):
+        super().__init__(verbose)
+
+        # Deep module
+        """
+        self.deep = DeepModule(
+            n_channels=255,
+            model_id='unet',
+            weights_pth='unet.pth',
+            verbose=False
+        )
+        """
+
+    # Abstract interface
+
+    def run(self, img: Image) -> float:
+        # Get depth map associated to image
+        # depth = self.deep.run(img=img)
+        depth = img   # temporary, for testing purposes
+
+        # Dimensions
+        h, w = depth.shape
+
+        # Crop the image to keep center box
+        mx, my = w // 2, h // 2
+        dx, dy = w // 10, h // 10
+
+        cropped = depth[(mx - dx):(mx + dx), (my - dy):(my + dy)]
+
+        # Compute distance
+        distance = np.mean(cropped)
+
+        self.log(f'Distance: {distance}')
+
+        return distance
+
+
+# - Staircase
+
+class StaircaseModule(NavModule):
+    """
+    Module that moves the drone in a staircase (up or down) based on an image.
+    """
+
+    def __init__(self, controller: Controller, verbose=False):
+        super().__init__(verbose)
+
+        self.controller = controller
+
+        # Depth module
+        self.depth = DepthModule(verbose=False)
+
+        # Threshold and limit on distance
+        self.threshold = 1
+        self.limit = 2
+
+        # Define staircase actions
+        self.sactions = {
+            'up': partial(self.controller.move, 'up', 30),
+            'down': partial(self.controller.move, 'down', 30),
+            'forward': partial(self.controller.move, 'forward', 30)
+        }
+
+    # Abstract interface
+
+    def run(self, img: Image, direction: str):
+        while True:
+            # Get distance to staircase
+            distance = self.depth.run(img=img)
+
+            self.log(f'Distance: {distance}')
+
+            # Check limit
+            if distance > self.limit:
+                break
+
+            # Move the drone, according to distance
+            action = direction if distance < self.threshold else 'forward'
+            self.sactions.get(action)()
+
+            # Take a new picture
+            img = self.controller.picture()
+
+
+# Navigation algorithms
+
+# - Abstract class
+
 class NavAlgorithm(ABC):
     """
     Abstract class used to define a navigation algorithm.
@@ -91,11 +433,15 @@ class NavAlgorithm(ABC):
 
         self.env = env
         self.controller = controller
-        self.show = show
+        self._show = show
 
         # Path and associated sequence of actions
         self.path = env.path()
         self.sequence = env.path_to_seq(self.path)
+
+        # Key points of the environment
+        self._keypoints = self.env.extract_keypoints(self.path, self.sequence)
+        self._keypoints_idx = 0
 
         # Possible actions of the drone
         self.actions = {
@@ -104,30 +450,116 @@ class NavAlgorithm(ABC):
             'right': lambda a: self.controller.rotate('cw', a)
         }
 
-        # Define steps for each action
-        self.steps = {
-            'forward': 100,
-            'left': 90,
-            'right': 90
-        }
+        # Define custom steps for each action
+        self.steps = {'forward': 100, 'left': 90, 'right': 90}
 
-    def _show(self, **kwargs):
+        # Common modules used by algorithms
+        self.vanishing = AnalysisVanishingModule(
+            detector_id='classic',
+            controller=self.controller,
+            verbose=True
+        )
+
+        self.staircase = StaircaseModule(
+            controller=self.controller,
+            verbose=True
+        )
+
+        # Define reference steps and counters for each action (according to
+        # environment representation precision) to properly update the agent
+        # position in environment representation
+        self._refs = {'forward': 100, 'left': 90, 'right': 90}
+        self._counters = {'forward': 0, 'left': 0, 'right': 0}
+
+    # Environment representation
+
+    def _env_move(self, action: str, **kwargs):
+        """
+        Move the agent in the environment representation according to steps
+        defined.
+        """
+
+        # Update counter
+        self._counters[action] += 1
+
+        # Define step and times
+        ref = self._refs[action]
+        now = self.steps[action]
+
+        step = int(ref / now) if ref > now else 1
+        times = 1 if ref > now else int(now / ref)
+
+        # Update agent in environment, if necessary
+        if step == 1 or self._counters[action] % step:
+            self.env.move(action=action, times=times, **kwargs)
+
+    def _env_update(self, pos: Tuple, **kwargs):
+        """
+        Update the position of the agent in the environment representation.
+        """
+
+        # Reset all counters
+        for key in self._counters.keys():
+            self._counters[key] = 0
+
+        # Update agent in environment
+        self.env.update(pos=pos, **kwargs)
+
+    def _env_show(self, **kwargs):
         """
         Show the environment representation if flag is enabled.
         """
 
-        if self.show:
+        if self._show:
             self.env.render(**kwargs)
 
+    # Navigation
+
     @abstractmethod
+    def _is_keypoint(self, img: Image) -> bool:
+        """
+        Define if the drone has reached a key point or not based on an image.
+
+        Each navigation algorithm must implement this method.
+        """
+
+        pass
+
     def _execute(self):
         """
         Define how the drone executes actions during the navigation process.
 
-        Must be defined by each navigation algorithm.
+        By default, it uses images of the drone to determine next action by
+        checking if the drone has reach a key point or not.
+
+        This method can be override if the navigation algorithm has to work
+        differently.
         """
 
-        pass
+        while not self.env.has_reached_obj():
+            img = self.controller.picture()
+
+            # Align drone using vanishing point
+            self.vanishing.run(img=img)
+
+            # Check if drone has reach a key point
+            if self._is_keypoint(img):
+                action, pos = self._keypoints[self._keypoints_idx]
+                self._keypoints_idx += 1
+
+                self._env_update(pos)
+            else:
+                action = 'forward'
+
+            # Execute action
+            if action in ['up', 'down']:
+                self.staircase.run(img, action)
+            else:
+                self.actions.get(action)(self.steps.get(action))
+                self._env_move(action)
+
+            # Show updated environment
+            self._env_show(path=self.path, what=['pos', 'obj'])
 
     def navigate(self):
         """
@@ -138,7 +570,7 @@ class NavAlgorithm(ABC):
         """
 
         # Show the environment
-        self._show(path=self.path, what=['pos', 'obj'])
+        self._env_show(path=self.path, what=['pos', 'obj'])
 
         # Take off
         self.controller.arm()
@@ -155,311 +587,7 @@ class NavAlgorithm(ABC):
         self.env.keep()
 
 
-# Modules
-
-class VisionModule(NavModule):
-    """
-    Module that determines probabilities of an event based on Deep Learning
-    model predictions.
-    """
-
-    def __init__(
-        self,
-        n_outputs: int,
-        model_id: str,
-        weights_pth: str,
-        verbose=False
-    ):
-        super().__init__(verbose)
-
-        # Device
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        torch.backends.cudnn.enabled = True
-        torch.backends.cudnn.benchmark = True
-
-        self.device = device
-
-        self.log(f'Device: {device}')
-
-        # Model
-        models = {
-            'densenet121': partial(DenseNet, densenet_id='121'),
-            'densenet161': partial(DenseNet, densenet_id='161'),
-            'small': SmallConvNet
-        }
-
-        model = models.get(model_id)(3, n_outputs)
-        model = model.to(device)
-        model.load_state_dict(torch.load(weights_pth, map_location=device))
-        model.eval()
-
-        self.model = model
-
-        # GPU warm-up
-        for _ in range(10):
-            _ = self.model(torch.randn(3, 180, 320).to(self.device))
-
-        # Processing
-        self.process = transforms.Compose([
-            lambda x: cv2.resize(x, (320, 180)),
-            transforms.ToTensor()
-        ])
-
-    # Abstract interface
-
-    def run(self, img: Image) -> List:
-        img = self.process(img)
-
-        with torch.no_grad():
-            img = img.unsqueeze(0)
-            img = img.to(self.device)
-
-            pred = self.model(img).cpu()
-            pred = torch.flatten(pred)
-
-            self.log(f'Prediction: {pred}')
-
-            return pred.tolist()
-
-
-class VanishingModule(NavModule):
-    """
-    Abstract class used to define navigation module that works with vanishing
-    point.
-    """
-
-    def __init__(self, controller: Controller, verbose=False):
-        super().__init__(verbose)
-
-        # Controller
-        self.controller = controller
-
-        # Define adjustment actions
-        self.adjustments = {
-            'left': partial(self.controller.rotate, 'cw', 5),
-            'right': partial(self.controller.rotate, 'ccw', 5)
-        }
-
-    @abstractmethod
-    def _alignment(self, img: Image) -> str:
-        """
-        Determine the orientation of the drone (left, right or center) based on
-        an image.
-        """
-
-        pass
-
-    # Abstract interface of parent class
-
-    def run(self, img: Image):
-        while True:
-            alignment = self._alignment(img)
-
-            if alignment == 'center':
-                break
-
-            self.adjustments.get(alignment)()
-
-            img = self.controller.picture()
-
-
-class VanishingCVModule(VanishingModule):
-    """
-    Module that adjusts the drone by estimating its alignment based on a
-    vanishing point detection using pure computer vision method.
-    """
-
-    def __init__(self, controller, verbose=False):
-        super().__init__(controller, verbose)
-
-        # Vanishing point detector
-        self.method = VPClassic()
-
-        # Bounds
-        self.lower, self.upper = None, None
-
-    # Abstract interface
-
-    def _alignment(self, img):
-        # Define bounds, if not defined
-        if self.lower is None:
-            h, w, _ = img.shape
-            mean, std = w / 2, w / 20
-
-            self.lower = (mean - 2 * std, mean - std)
-            self.upper = (mean + std, mean + 2 * std)
-
-        # Detect vanishing point
-        x, _ = self.method.detect(img)
-
-        # Get orientation
-        orientation = 'center'
-
-        if self.upper[0] < x < self.upper[1]:
-            orientation = 'right'
-        elif self.lower[0] < x < self.lower[1]:
-            orientation = 'left'
-
-        self.log(f'Orientation: {orientation}')
-
-        return orientation
-
-
-class VanishingDLModule(VanishingModule):
-    """
-    Module that adjusts the drone by estimating its alignment based on a
-    vanishing point detection using Deep Learning method.
-    """
-
-    def __init__(
-        self,
-        grid_size: int,
-        model_id: str,
-        weights_pth: str,
-        controller,
-        verbose=False
-    ):
-        super().__init__(controller, verbose)
-
-        # Vision module
-        self.vision = VisionModule(grid_size, model_id, weights_pth, False)
-
-        # Define middle cell
-        self.middle = math.floor(grid_size / 2)
-
-    # Abstract interface
-
-    def _alignment(self, img):
-        # Get cell that contains vanishing point
-        pred = self.vision.run(img)
-        cell = pred.index(max(pred))
-
-        # Get orientation
-        orientation = 'center'
-
-        if cell == self.middle + 1:
-            orientation = 'right'
-        elif cell == self.middle - 1:
-            orientation = 'left'
-
-        self.log(f'Orientation: {orientation}')
-
-        return orientation
-
-
-class MarkerModule(NavModule):
-    """
-    Module that reads the content of a marker, if any, and returns it along
-    with coordinates of its corner points.
-    """
-
-    def __init__(self, marker: str, verbose=False):
-        super().__init__(verbose)
-
-        # Marker decoder
-        decoders = {
-            'aruco': ArucoOpenCV,
-            'qr': QRZBar
-        }
-
-        self.decoder = decoders.get(marker)()
-
-    # Abstract interface
-
-    def run(self, img: Image) -> Tuple[str, List]:
-        decoded, pts = self.decoder.decode(img)
-
-        self.log(f'Decoded: {decoded}')
-
-        return decoded, pts
-
-
-class DepthModule(NavModule):
-    """
-    Module that infers depth map associated to an image and compute distance to
-    element in front of the drone.
-
-    For the moment, in order to perform tests, the module works DIRECTLY with a
-    ground truth depth map obtained via AirSim.
-    """
-
-    def __init__(self, verbose=False):
-        super().__init__(verbose)
-
-    # Abstract interface
-
-    def run(self, img: Image) -> float:
-        # Dimensions
-        h, w = img.shape
-
-        # Crop the image to keep center box
-        mx, my = w // 2, h // 2
-        dx, dy = w // 10, h // 10
-
-        cropped = img[(mx - dx):(mx + dx), (my - dy):(my + dy)]
-
-        # Compute distance
-        distance = np.mean(cropped)
-
-        self.log(f'Distance: {distance}')
-
-        return distance
-
-
-class StaircaseModule(NavModule):
-    """
-    Module that moves the drone in a staircase (up or down) based on an image.
-    """
-
-    def __init__(self, controller: Controller, direction: str, verbose=False):
-        super().__init__(verbose)
-
-        # Controller
-        self.controller = controller
-
-        # Direction
-        self.direction = direction
-
-        # Depth module
-        self.depth = DepthModule(False)
-
-        # Threshold on distance
-        self.threshold = 1
-
-        # Limit to consider the staircase
-        self.limit = 2
-
-        # Define staircase actions
-        self.staircase = {
-            'up': partial(self.controller.move, 'up', 30),
-            'down': partial(self.controller.move, 'down', 30),
-            'forward': partial(self.controller.move, 'forward', 30)
-        }
-
-    # Abstract interface
-
-    def run(self, img: Image):
-        while True:
-            # Get distance to staircase
-            distance = self.depth.run(img=img)
-
-            self.log(f'Distance: {distance}')
-
-            # Check limit
-            if distance > self.limit:
-                break
-
-            # Move the drone, according to distance
-            if distance < self.threshold:
-                self.staircase.get(self.direction)()
-            else:
-                self.staircase.get('forward')()
-
-            # Take a new picture
-            img = self.controller.picture()
-
-
-# Navigation algorithms
+# - Naive algorithms used for tests; unusable in real life
 
 class NaiveAlgorithm(NavAlgorithm):
     """
@@ -472,17 +600,24 @@ class NaiveAlgorithm(NavAlgorithm):
 
     # Abstract interface
 
+    def _is_keypoint(self, img):
+        # Dummy implementation to respect abstract interface
+
+        return False
+
+    # Override how drone executes actions
+
     def _execute(self):
         # Group sequence of actions
         grouped = self.env.group_seq(self.sequence)
 
         # Execute each action
         for action, times in grouped:
-            self.actions.get(action)(self.steps.get(action) * times)
+            self.actions.get(action)(self._refs.get(action) * times)
             self.env.move(action, times)
 
             # Show updated environment
-            self._show(path=self.path, what=['pos', 'obj'])
+            self._env_show(path=self.path, what=['pos', 'obj'])
 
 
 class VanishingAlgorithm(NavAlgorithm):
@@ -494,13 +629,17 @@ class VanishingAlgorithm(NavAlgorithm):
     def __init__(self, env, controller, show=False):
         super().__init__(env, controller, show)
 
-        # Create vanishing point module
-        self.vanishing = VanishingCVModule(controller=controller, verbose=True)
-
-        # List turn actions
+        # Turn actions
         self.turn_actions = ['left', 'right']
 
     # Abstract interface
+
+    def _is_keypoint(self, img):
+        # Dummy implementation to respect abstract interface
+
+        return False
+
+    # Override how drone executes actions
 
     def _execute(self):
         # Execute action, adjusted with vanishing point
@@ -510,173 +649,85 @@ class VanishingAlgorithm(NavAlgorithm):
 
                 self.vanishing.run(img=img)
 
-            self.actions.get(action)(self.steps.get(action))
+            self.actions.get(action)(self._refs.get(action))
             self.env.move(action)
 
             # Show updated environment
-            self._show(path=self.path, what=['pos', 'obj'])
+            self._env_show(path=self.path, what=['pos', 'obj'])
 
+
+# - Real navigation algorithms, possibly usable in real life
 
 class VisionAlgorithm(NavAlgorithm):
     """
-    Navigation algorithm based on predictions by Deep Learning model on drone's
-    vision (picture taken), vanishing point detection and environment
-    information.
+    Navigation algorithm that uses predictions of Deep Learning model to
+    determine if drone has reached a key point or not.
     """
 
     def __init__(self, env, controller, show=False):
         super().__init__(env, controller, show)
 
-        # Create vision module
-        self.vision = VisionModule(
-            n_outputs=2,
-            model_id='densenet121',
-            weights_pth='densenet121.pth',
+        # Deep module
+        self.deep = DeepModule(
+            n_channels=2,
+            model_id='densenet161',
+            weights_pth='densenet161.pth',
             verbose=True
         )
-
-        # Create vanishing point module
-        self.vanishing = VanishingCVModule(controller=controller, verbose=True)
 
         # Threshold of confidence
         self.threshold = 0.85
 
     # Abstract interface
 
-    def _execute(self):
-        # Get key points
-        keypoints = self.env.extract_keypoints(self.path, self.sequence)
-        idx = 0
+    def _is_keypoint(self, img):
+        pred = self.deep.run(img=img)
 
-        # Execute actions based on predictions
-        while not self.env.has_reached_obj():
-            img = self.controller.picture()
-
-            # Align drone with vanishing point
-            self.vanishing.run(img=img)
-
-            # Get predicition of Deep Learning model
-            pred = self.vision.run(img=img)
-
-            # Check if it is a turn or not
-            if pred[1] > self.threshold:
-                action, pos = keypoints[idx]
-                idx += 1
-
-                self.env.update(pos, action)
-            else:
-                action = 'forward'
-
-                self.env.move(action)
-
-            self.actions.get(action)(self.steps.get(action))
-
-            # Show updated environment
-            self._show(path=self.path, what=['pos', 'obj'])
+        return pred[1] > self.threshold
 
 
 class MarkerAlgorithm(NavAlgorithm):
     """
-    Navigation algorithm based on marker detection and decoding, vanishing
-    point detection and environment information.
+    Navigation algorithm that uses marker detection and decoding to determine
+    if drone has reached a key point or not.
     """
 
     def __init__(self, env, controller, show=False):
         super().__init__(env, controller, show)
 
-        # Create marker module
-        self.qr = MarkerModule(marker='qr', verbose=True)
-
-        # Create vanishing point module
-        self.vanishing = VanishingCVModule(controller=controller, verbose=True)
+        # Marker module
+        self.marker = MarkerModule(decoder_id='aruco_opencv', verbose=True)
 
         # Threshold on marker size
-        self.threshold = 140
+        self.threshold = 80
 
     # Abstract interface
 
-    def _execute(self):
-        # Get key points
-        keypoints = self.env.extract_keypoints(self.path, self.sequence)
-        idx = 0
+    def _is_keypoint(self, img):
+        decoded, pts = self.marker.run(img=img)
+        size = 0 if pts is None else math.dist(pts[0], pts[2])
 
-        # Execute actions, guided by markers
-        while not self.env.has_reached_obj():
-            img = self.controller.picture()
-
-            # Align drone with vanishing point
-            self.vanishing.run(img=img)
-
-            # Decode marker, if any
-            decoded, pts = self.qr.run(img=img)
-
-            # Compute marker size
-            size = 0 if pts is None else math.dist(pts[0], pts[2])
-
-            # Check if it is a turn or not
-            if decoded == 'turn' and size > self.threshold:
-                action, pos = keypoints[idx]
-                idx += 1
-
-                self.env.update(pos, action)
-            else:
-                action = 'forward'
-
-                self.env.move(action)
-
-            self.actions.get(action)(self.steps.get(action))
-
-            # Show updated environment
-            self._show(path=self.path, what=['pos', 'obj'])
+        return decoded == '1' and size > self.threshold
 
 
 class DepthAlgorithm(NavAlgorithm):
     """
-    Navigation algorithm based on depth map (and so, approximate distances to
-    elements) associated to an image.
+    Navigation algorithm that uses depth map associated to an image to
+    determine if drone has reached a key point or not.
     """
 
     def __init__(self, env, controller, show=False):
         super().__init__(env, controller, show)
 
-        # Create depth module
+        # Depth module
         self.depth = DepthModule(verbose=True)
-
-        # Create vanishing point module
-        self.vanishing = VanishingCVModule(controller=controller, verbose=True)
 
         # Threshold on distance
         self.threshold = 2
 
     # Abstract interface
 
-    def _execute(self):
-        # Get key points
-        keypoints = self.env.extract_keypoints(self.path, self.sequence)
-        idx = 0
+    def _is_keypoint(self, img):
+        distance = self.depth.run(img=img)
 
-        # Execute actions based on predictions
-        while not self.env.has_reached_obj():
-            img = self.controller.picture()
-
-            # Align drone with vanishing point
-            # self.vanishing.run(img=img)
-
-            # Get distance to the element in front of the drone
-            distance = self.depth.run(img=img)
-
-            # Check if it is a turn or not
-            if distance < self.threshold:
-                action, pos = keypoints[idx]
-                idx += 1
-
-                self.env.update(pos, action)
-            else:
-                action = 'forward'
-
-                self.env.move(action)
-
-            self.actions.get(action)(self.steps.get(action))
-
-            # Show updated environment
-            self._show(path=self.path, what=['pos', 'obj'])
+        return distance < self.threshold

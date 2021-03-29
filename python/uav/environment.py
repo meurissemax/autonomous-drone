@@ -319,19 +319,13 @@ class Environment:
         for _ in range(times):
             self.pos, self.omega = self._next(self.pos, self.omega, action)
 
-    def update(self, p: Position, action: Action):
+    def update(self, p: Position):
         """
-        Update the position and orientation of the agent based on new position
-        and an action.
+        Update the position of the agent based on new given position.
         """
 
-        # Update position
         if self._is_free(p):
             self.pos = p
-
-        # Update orientation
-        if action in self.turn_actions:
-            _, self.omega = self._next(self.pos, self.omega, action)
 
     # Path planning and corresponding actions
 
