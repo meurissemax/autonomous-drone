@@ -382,6 +382,10 @@ class Environment:
         forward, move forward, turn left, move forward, etc.
         """
 
+        # If path is empty
+        if len(path) == 0:
+            return []
+
         # Initial position and orientation
         pos, omega = self.pos, self.omega
 
