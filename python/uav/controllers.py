@@ -280,7 +280,7 @@ class AirSimDroneNoisy(AirSimDrone):
         super().__init__()
 
     def _noise(self, value: float) -> float:
-        mean = value / 10
+        mean = value / 15
         std = value / 50
 
         noise = np.random.normal(mean, std)
@@ -288,10 +288,16 @@ class AirSimDroneNoisy(AirSimDrone):
         return value + noise
 
     def move(self, direction, distance, speed=50.):
-        super().move(direction, self._noise(distance), speed)
+        distance = self._noise(distance)
+        distance = min(max(20, distance), 500)
+
+        super().move(direction, distance, speed)
 
     def rotate(self, direction, angle):
-        super().rotate(direction, self._noise(angle))
+        angle = self._noise(angle)
+        angle = min(max(1, angle), 360)
+
+        super().rotate(direction, angle)
 
 
 class TelloEDU(Controller):
