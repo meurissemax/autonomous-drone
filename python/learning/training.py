@@ -64,10 +64,10 @@ def train(
     criterion_id: str = 'mse',
     dataset_id: str = 'class',
     train_pth: str = 'train.json',
-    model_id: str = 'densenet121',
+    model_id: str = 'densenet161',
     augment: bool = False,
     edges: bool = False,
-    batch_size: int = 32,
+    batch_size: int = 16,
     out_channels: int = 2,
     num_epochs: int = 30,
     weights_pth: str = 'weights.pth'

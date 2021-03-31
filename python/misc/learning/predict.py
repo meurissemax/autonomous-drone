@@ -77,7 +77,7 @@ def _vanishing(input_pth: str, outpt: torch.tensor) -> np.array:
 def main(
     input_pth: str = 'input.png',
     edges: bool = False,
-    model_id: str = 'densenet121',
+    model_id: str = 'densenet161',
     out_channels: int = 2,
     weights_pth: str = 'weights.pth',
     output_pth: str = 'output.png',
@@ -205,7 +205,7 @@ if __name__ == '__main__':
         '-m',
         '--model',
         type=str,
-        default='densenet121',
+        default='densenet161',
         choices=['densenet121', 'densenet161', 'small', 'unet'],
         help='model to use for prediction'
     )

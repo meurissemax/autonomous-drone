@@ -90,9 +90,9 @@ def evaluate(
     outputs_pth: str = 'outputs/',
     dataset_id: str = 'class',
     test_pth: str = 'test.json',
-    model_id: str = 'densenet121',
+    model_id: str = 'densenet161',
     edges: bool = False,
-    batch_size: int = 32,
+    batch_size: int = 16,
     out_channels: int = 2,
     weights_pth: str = 'weights.pth',
     metric_id: str = 'pr'

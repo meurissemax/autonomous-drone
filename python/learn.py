@@ -26,10 +26,10 @@ def main(
     criterion_id: str = 'mse',
     dataset_id: str = 'class',
     train_pth: str = 'train.json',
-    model_id: str = 'densenet121',
+    model_id: str = 'densenet161',
     augment: bool = False,
     edges: bool = False,
-    batch_size: int = 32,
+    batch_size: int = 16,
     out_channels: int = 2,
     num_epochs: int = 30,
     test_pth: str = 'test.json',
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-model',
         type=str,
-        default='densenet121',
+        default='densenet161',
         choices=['densenet121', 'densenet161', 'small', 'unet'],
         help='model to train'
     )
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-batch',
         type=int,
-        default=32,
+        default=16,
         help='batch size'
     )
 
