@@ -12,6 +12,7 @@ This procedure is used to test a model on one specific input.
 
 import cv2
 import math
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
@@ -28,12 +29,32 @@ parent = os.path.dirname(os.path.dirname(current))
 sys.path.append(parent)
 
 from learning.datasets import to_edges  # noqa: E402
-from learning.models import DenseNet, SmallConvNet, UNet  # noqa: E402
+from learning.models import DenseNet, SmallConvNet, UNet, MiDaS  # noqa: E402
 
 
 #############
 # Functions #
 #############
+
+def _distance(depth: np.array) -> float:
+    """
+    Compute distance to element in front of the camera based on depth image.
+    """
+
+    # Dimensions
+    h, w = depth.shape
+
+    # Crop the image to keep center box
+    mx, my = w // 2, h // 2
+    dx, dy = w // 10, h // 10
+
+    cropped = depth[(mx - dx):(mx + dx), (my - dy):(my + dy)]
+
+    # Compute distance
+    distance = np.mean(cropped)
+
+    return distance
+
 
 def _vanishing(input_pth: str, outpt: torch.tensor) -> np.array:
     """
@@ -96,8 +117,10 @@ def main(
     if edges:
         inpt = to_edges(inpt)
 
+    size = (224, 384) if model_id == 'midas' else (180, 320)
+
     process = transforms.Compose([
-        transforms.Resize((180, 320)),
+        transforms.Resize(size),
         transforms.ToTensor()
     ])
 
@@ -109,14 +132,18 @@ def main(
         'densenet121': partial(DenseNet, densenet_id='121'),
         'densenet161': partial(DenseNet, densenet_id='161'),
         'small': SmallConvNet,
-        'unet': UNet
+        'unet': UNet,
+        'midas': MiDaS
     }
 
     in_channels = inpt.size()[1]
 
-    model = models.get(model_id, 'densenet121')(in_channels, out_channels)
+    model = models.get(model_id, 'densenet161')(in_channels, out_channels)
     model = model.to(device)
-    model.load_state_dict(torch.load(weights_pth, map_location=device))
+
+    if model_id != 'midas':
+        model.load_state_dict(torch.load(weights_pth, map_location=device))
+
     model.eval()
 
     n_params = sum(p.numel() for p in model.parameters())
@@ -124,53 +151,53 @@ def main(
     print(f'Number of parameters: {n_params}')
 
     # Init logger
-    start = torch.cuda.Event(enable_timing=True)
-    end = torch.cuda.Event(enable_timing=True)
+    if torch.cuda.is_available():
+        start = torch.cuda.Event(enable_timing=True)
+        end = torch.cuda.Event(enable_timing=True)
 
-    n_passes = 100
-    times = np.zeros((n_passes, 1))
+        n_passes = 100
+        times = np.zeros((n_passes, 1))
 
     # Prediction
     with torch.no_grad():
         inpt = inpt.to(device)
 
-        # GPU warm-up
-        for _ in range(10):
-            _ = model(inpt)
+        if torch.cuda.is_available():
+            # GPU warm-up
+            for _ in range(10):
+                _ = model(inpt)
 
-        # Compute inference time
-        for idx in range(n_passes):
-            start.record()
+            # Compute inference time
+            for idx in range(n_passes):
+                start.record()
+                outpt = model(inpt)
+                end.record()
+
+                torch.cuda.synchronize()
+
+                time = start.elapsed_time(end)
+                times[idx] = time
+
+            print(f'Inference time (mean): {np.mean(times) / n_passes}')
+            print(f'Inference time (std): {np.std(times)}')
+        else:
             outpt = model(inpt)
-            end.record()
-
-            torch.cuda.synchronize()
-
-            time = start.elapsed_time(end)
-            times[idx] = time
-
-        print(f'Inference time (mean): {np.mean(times) / n_passes}')
-        print(f'Inference time (std): {np.std(times)}')
 
         # Exportation
         outpt = outpt.squeeze(0).cpu()
 
-        actions = {
-            'densenet121': 'print',
-            'densenet161': 'print',
-            'small': 'print',
-            'unet': 'export'
-        }
-
-        action = actions.get(model_id, 'densenet121')
-
-        if action == 'print':
-            print(f'Output: {outpt}')
-        elif action == 'export':
+        if model_id == 'unet':
             outpt = torch.argmax(outpt, dim=0)
             outpt = outpt.to(dtype=torch.uint8).numpy()
             outpt = Image.fromarray(outpt)
             outpt.save(output_pth)
+        elif model_id == 'midas':
+            depth = outpt.numpy()
+            plt.imsave(output_pth, depth, cmap='plasma')
+
+            print(f'Distance: {_distance(depth)}')
+        else:
+            print(f'Output: {outpt}')
 
         # Vanishing point
         if vanishing:
@@ -206,7 +233,7 @@ if __name__ == '__main__':
         '--model',
         type=str,
         default='densenet161',
-        choices=['densenet121', 'densenet161', 'small', 'unet'],
+        choices=['densenet121', 'densenet161', 'small', 'unet', 'midas'],
         help='model to use for prediction'
     )
 

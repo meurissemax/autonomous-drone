@@ -20,7 +20,7 @@ from analysis.markers import ArucoOpenCV, QROpenCV, QRZBar
 from analysis.vanishing_point import VPClassic, VPEdgelets
 from .controllers import Controller
 from .environment import Environment
-from learning.models import DenseNet, SmallConvNet, UNet
+from learning.models import DenseNet, SmallConvNet, UNet, MiDaS
 
 
 ##########
@@ -220,24 +220,36 @@ class DeepModule(NavModule):
             'densenet121': partial(DenseNet, densenet_id='121'),
             'densenet161': partial(DenseNet, densenet_id='161'),
             'small': SmallConvNet,
-            'unet': UNet
+            'unet': UNet,
+            'midas': MiDaS
         }
 
         model = models.get(model_id)(3, n_channels)
         model = model.to(device)
-        model.load_state_dict(torch.load(weights_pth, map_location=device))
+
+        if model_id != 'midas':
+            model.load_state_dict(torch.load(weights_pth, map_location=device))
+
         model.eval()
 
         self.model = model
 
         # GPU warm-up
-        with torch.no_grad():
-            for _ in range(10):
-                _ = self.model(torch.randn(1, 3, 180, 320).to(self.device))
+        if torch.cuda.is_available():
+            with torch.no_grad():
+                for _ in range(10):
+                    if model_id == 'midas':
+                        dummy = torch.randn(1, 3, 224, 384)
+                    else:
+                        dummy = torch.randn(1, 3, 180, 320)
+
+                    _ = self.model(dummy.to(self.device))
 
         # Processing
+        size = (384, 224) if model_id == 'midas' else (320, 180)
+
         self.preprocess = transforms.Compose([
-            lambda x: cv2.resize(x, (320, 180)),
+            lambda x: cv2.resize(x, size),
             transforms.ToTensor()
         ])
 
@@ -319,30 +331,24 @@ class DepthModule(NavModule):
     """
     Module that infers depth map associated to an image and compute distance to
     element in front of the drone.
-
-    For the moment, in order to perform tests, the module works DIRECTLY with a
-    ground truth depth map obtained via AirSim.
     """
 
     def __init__(self, verbose=False):
         super().__init__(verbose)
 
         # Deep module
-        """
         self.deep = DeepModule(
-            n_channels=255,
-            model_id='unet',
-            weights_pth='unet.pth',
+            n_channels=2,  # dummy
+            model_id='midas',
+            weights_pth='',  # dummy
             verbose=False
         )
-        """
 
     # Abstract interface
 
     def run(self, img: Image) -> float:
         # Get depth map associated to image
-        # depth = self.deep.run(img=img)
-        depth = img   # temporary, for testing purposes
+        depth = self.deep.run(img=img)
 
         # Dimensions
         h, w = depth.shape
@@ -377,8 +383,8 @@ class StaircaseModule(NavModule):
         self.depth = DepthModule(verbose=False)
 
         # Threshold and limit on distance
-        self.threshold = 1
-        self.limit = 2
+        self.threshold = 1300
+        self.limit = 1800
 
         # Define staircase actions
         self.sactions = {
@@ -723,7 +729,7 @@ class DepthAlgorithm(NavAlgorithm):
         self.depth = DepthModule(verbose=True)
 
         # Threshold on distance
-        self.threshold = 2
+        self.threshold = 1800
 
     # Abstract interface
 

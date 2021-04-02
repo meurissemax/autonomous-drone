@@ -285,3 +285,39 @@ class UNet(nn.Module):
         x = self.last(x)
 
         return x
+
+
+class MiDaS(nn.Module):
+    """
+    Implementation of the MiDaS network.
+
+    This model is used to predict relative inverse depth of images.
+
+    Input images must be in 384 x 224.
+
+    Taken from:
+        - https://pytorch.org/hub/intelisl_midas_v2/
+    """
+
+    def __init__(self, _in_channels: int, _out_channels: int):
+        super().__init__()
+
+        # Normalization
+        self.register_buffer(
+            'mean',
+            torch.tensor([0.485, 0.456, 0.406]).view(-1, 1, 1)
+        )
+
+        self.register_buffer(
+            'std',
+            torch.tensor([0.229, 0.224, 0.225]).view(-1, 1, 1)
+        )
+
+        # Load MiDaS model
+        self.midas = torch.hub.load('intel-isl/MiDaS', 'MiDaS')
+
+    def forward(self, x: Tensors) -> Tensors:
+        x = (x - self.mean) / self.std
+        x = self.midas(x)
+
+        return x
