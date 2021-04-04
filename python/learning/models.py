@@ -143,9 +143,9 @@ class DenseNet(nn.Module):
         )
 
     def forward(self, x: Tensors) -> Tensors:
-        x = (x - self.mean) / self.std
-
         x = self.first(x)
+
+        x = (x - self.mean) / self.std
         x = self.densenet(x)
 
         for conv in self.convs:

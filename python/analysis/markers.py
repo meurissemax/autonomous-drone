@@ -7,6 +7,7 @@ Implementation of marker (ArUco, QR code) detection and decoding methods.
 ###########
 
 import cv2
+import math
 import numpy as np
 import pyzbar.pyzbar as zbar
 
@@ -48,6 +49,30 @@ class MarkerDecoder(ABC):
         """
 
         pass
+
+    def ratio(self, img: Image, pts: List[Point]) -> float:
+        """
+        Compute the ratio between the marker's diagonal length and the image's
+        diagonal length.
+        """
+
+        # If no marker has been detected
+        if pts is None:
+            return 0
+
+        # Image dimensions
+        size = img.shape
+
+        # Get diagonal lengths
+        lengths = [
+            math.dist([0, 0], size[:2]),
+            math.dist(pts[0], pts[2])
+        ]
+
+        # Compute ratio
+        ratio = lengths[1] / lengths[0]
+
+        return ratio
 
 
 # ArUco

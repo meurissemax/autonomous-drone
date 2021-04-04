@@ -48,10 +48,10 @@ def _distance(depth: np.array) -> float:
     mx, my = w // 2, h // 2
     dx, dy = w // 10, h // 10
 
-    cropped = depth[(mx - dx):(mx + dx), (my - dy):(my + dy)]
+    cropped = depth[(my - dy):(my + dy), (mx - dx):(mx + dx)]
 
     # Compute distance
-    distance = np.mean(cropped)
+    distance = 3000 / np.mean(cropped)
 
     return distance
 

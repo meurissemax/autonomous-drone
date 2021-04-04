@@ -60,7 +60,7 @@ class Controller(ABC):
         pass
 
     @abstractmethod
-    def move(self, direction: str, distance: float, speed: float = 50.):
+    def move(self, direction: str, distance: float, speed: int = 50):
         pass
 
     @abstractmethod
@@ -146,7 +146,7 @@ class AirSimDrone(Controller):
         if landed != airsim.LandedState.Landed:
             self.client.landAsync().join()
 
-    def move(self, direction, distance, speed=50.):
+    def move(self, direction, distance, speed=50):
         error = False
 
         if speed < 10 or speed > 100:
@@ -322,6 +322,9 @@ class TelloEDU(Controller):
         self.stream_thread = threading.Thread(target=self._stream_thread)
         self.stream_thread.daemon = True
 
+        # Speed of the drone, in [cm/s]
+        self.speed = 50
+
     # Abstract interface
 
     def arm(self):
@@ -339,8 +342,8 @@ class TelloEDU(Controller):
 
         self.disarmed = True
 
-        self.response_thread.join()
         self.stream_thread.join()
+        self.response_thread.join()
 
         self.socket.close()
 
@@ -350,7 +353,7 @@ class TelloEDU(Controller):
     def land(self):
         self._send_command('land')
 
-    def move(self, direction, distance, speed=50.):
+    def move(self, direction, distance, speed=50):
         error = False
 
         if speed < 10 or speed > 100:
@@ -369,7 +372,10 @@ class TelloEDU(Controller):
             error = True
 
         if not error:
-            self._send_command(f'speed {speed}')
+            if speed != self.speed:
+                self._send_command(f'speed {speed}')
+                self.speed = speed
+
             self._send_command(f'{direction} {distance}')
 
     def rotate(self, direction, angle):
@@ -441,6 +447,7 @@ class TelloEDU(Controller):
 
     def _stream_thread(self):
         stream = cv2.VideoCapture('udp://@0.0.0.0:11111')
+        stream.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         while True:
             if self.disarmed:
@@ -449,9 +456,6 @@ class TelloEDU(Controller):
             ack, frame = stream.read()
 
             if ack:
-                frame = cv2.resize(frame, (320, 180))
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-                self.frame = frame
+                self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         stream.release()

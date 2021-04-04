@@ -164,7 +164,8 @@ class AnalysisVanishingModule(VanishingModule):
 class MarkerModule(NavModule):
     """
     Module that reads the content of a marker, if any, and returns it along
-    with coordinates of its corner points.
+    with coordinates of its corner points and ratio between image's diagonal
+    length and marker's diagonal length.
     """
 
     def __init__(self, decoder_id: str, verbose=False):
@@ -181,12 +182,14 @@ class MarkerModule(NavModule):
 
     # Abstract interface
 
-    def run(self, img: Image) -> Tuple[str, List]:
+    def run(self, img: Image) -> Tuple[str, List, float]:
         decoded, pts = self.decoder.decode(img)
+        ratio = self.decoder.ratio(img, pts)
 
         self.log(f'Decoded: {decoded}')
+        self.log(f'Ratio: {ratio}')
 
-        return decoded, pts
+        return decoded, pts, ratio
 
 
 # - Deep Learning
@@ -344,6 +347,11 @@ class DepthModule(NavModule):
             verbose=False
         )
 
+        # Factor to convert depth into distance (normally, it depends on camera
+        # parameters, but since I don't known these parameters, I try values
+        # and found this one)
+        self.factor = 3000
+
     # Abstract interface
 
     def run(self, img: Image) -> float:
@@ -357,10 +365,10 @@ class DepthModule(NavModule):
         mx, my = w // 2, h // 2
         dx, dy = w // 10, h // 10
 
-        cropped = depth[(mx - dx):(mx + dx), (my - dy):(my + dy)]
+        cropped = depth[(my - dy):(my + dy), (mx - dx):(mx + dx)]
 
         # Compute distance
-        distance = np.mean(cropped)
+        distance = self.factor / np.mean(cropped)
 
         self.log(f'Distance: {distance}')
 
@@ -383,8 +391,8 @@ class StaircaseModule(NavModule):
         self.depth = DepthModule(verbose=False)
 
         # Threshold and limit on distance
-        self.threshold = 1300
-        self.limit = 1800
+        self.threshold = 1
+        self.limit = 2
 
         # Define staircase actions
         self.sactions = {
@@ -704,16 +712,15 @@ class MarkerAlgorithm(NavAlgorithm):
         # Marker module
         self.marker = MarkerModule(decoder_id='aruco_opencv', verbose=True)
 
-        # Threshold on marker size
-        self.threshold = 80
+        # Threshold on ratio
+        self.threshold = 0.15
 
     # Abstract interface
 
     def _is_keypoint(self, img):
-        decoded, pts = self.marker.run(img=img)
-        size = 0 if pts is None else math.dist(pts[0], pts[2])
+        decoded, pts, ratio = self.marker.run(img=img)
 
-        return decoded == '1' and size > self.threshold
+        return decoded == '1' and ratio > self.threshold
 
 
 class DepthAlgorithm(NavAlgorithm):
@@ -729,7 +736,7 @@ class DepthAlgorithm(NavAlgorithm):
         self.depth = DepthModule(verbose=True)
 
         # Threshold on distance
-        self.threshold = 1800
+        self.threshold = 1
 
     # Abstract interface
 

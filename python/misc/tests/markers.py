@@ -42,6 +42,9 @@ def main(
     # Decode marker, if any
     decoded, pts = method.decode(img)
 
+    # Get ratio
+    ratio = method.ratio(img, pts)
+
     # Display result
     if decoded is None:
         print('No marker detected.')
@@ -49,6 +52,7 @@ def main(
         print('Marker detected!')
         print(f'Content: {decoded}')
         print(f'Corners: {pts}')
+        print(f'Ratio: {ratio}')
 
 
 if __name__ == '__main__':
