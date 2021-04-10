@@ -1,4 +1,4 @@
-\ProvidesPackage{sleek}[2021/01/07 v1.04 Sleek Package]
+\ProvidesPackage{sleek}[2021/06/04 v1.1.0 Sleek Package]
 
 %%%%%%%%%%%%%%%%
 % Requirements %
@@ -7,11 +7,11 @@
 % Font
 
 \RequirePackage{lmodern}
+\RequirePackage[T1]{fontenc}
 
 % Encoding
 
 \RequirePackage[utf8]{inputenc}
-\RequirePackage[T1]{fontenc}
 \RequirePackage{eurosym}
 
 % Style
@@ -20,10 +20,12 @@
 \RequirePackage{fancyhdr}
 \RequirePackage[bottom]{footmisc}
 
-\edef\restoreparindent{\parindent=\the\parindent\relax}
+\newlength\storedparindent
+\setlength{\storedparindent}{\parindent}
+
 \RequirePackage[parfill]{parskip}
 
-\RequirePackage{enumitem}
+\RequirePackage[inline]{enumitem}
 \RequirePackage{csquotes}
 \RequirePackage[dvipsnames]{xcolor}
 
@@ -50,8 +52,10 @@
 % Figures
 
 \RequirePackage{float}
-\RequirePackage[skip=1em]{caption}
+\RequirePackage[skip=1.5ex]{caption}
 \RequirePackage{subcaption}
+\RequirePackage[ruled]{algorithm}
+\RequirePackage[noend]{algpseudocode}
 
 % Arrays
 
@@ -71,10 +75,20 @@
     backref=true
 ]{biblatex}
 
-\setlength\bibitemsep{0.25em}
+\setlength\bibitemsep{1ex}
 
 \DeclareFieldFormat*{title}{\enquote{#1}}
 \DeclareFieldFormat*{citetitle}{\enquote{#1}}
+
+\DefineBibliographyStrings{english}{
+    backrefpage = {page},
+    backrefpages = {pages}
+}
+
+\DefineBibliographyStrings{french}{
+    backrefpage = {page},
+    backrefpages = {pages}
+}
 
 %%%%%%%%%%%%
 % Settings %
@@ -83,7 +97,7 @@
 % Parindent
 
 \DeclareOption{parindent}{
-    \restoreparindent
+    \setlength{\parindent}{\storedparindent}
 }
 
 % Style
@@ -98,24 +112,30 @@
 
 \DeclareOption{noheader}{
     \fancyhead[R]{}
-    \newgeometry{margin=2.5cm}
+    \geometry{margin=2.5cm}
 }
+
+% Algorithms
+
+\makeatletter
+\renewcommand\fs@ruled{% https://ctan.org/pkg/float
+    \def\@fs@cfont{\bfseries}\let\@fs@capt\floatc@ruled%
+    \def\@fs@pre{\hrule height \heavyrulewidth depth 0pt \kern 4pt}%
+    \def\@fs@mid{\kern 4pt \hrule height \heavyrulewidth depth 0pt \kern 4pt}%
+    \def\@fs@post{\kern 4pt \hrule height \heavyrulewidth depth 0pt \relax}%
+    \let\@fs@iftopcapt\iftrue%
+}
+\makeatother
+
+\algrenewcommand{\algorithmiccomment}[1]{\hfill #1}
+\algrenewcommand{\alglinenumber}[1]{\footnotesize{#1}}
+
+\algnewcommand\Break{\textbf{break}}
+\algnewcommand\Continue{\textbf{continue}}
 
 % Arrays
 
 \renewcommand{\arraystretch}{1.1}
-
-% Bibliography
-
-\DefineBibliographyStrings{english}{
-    backrefpage = {page},
-    backrefpages = {pages}
-}
-
-\DefineBibliographyStrings{french}{
-    backrefpage = {page},
-    backrefpages = {pages}
-}
 
 % Languages
 
@@ -163,14 +183,19 @@
 \newcommand{\sbk}[1]{\left[#1\right]} % square brackets [brackets]
 \newcommand{\abs}[1]{\left|#1\right|} % absolute value |x|
 \newcommand{\norm}[1]{\left\|#1\right\|} % norm ||x||
+\newcommand{\ceil}[1]{\left\lceil#1\right\rceil} % ceil ⌈x⌉
+\newcommand{\floor}[1]{\left\lfloor#1\right\rfloor} % floor ⌊x⌋
 
 \newcommand{\fact}[1]{#1!} % factorial x!
-\newcommand{\diff}{\mathrm{d}} % upright 'd' for differential
+
+\renewcommand{\d}[1]{\operatorname{d}\!{#1}} % upright 'd' for differential
+
 \DeclareMathOperator{\tr}{tr} % trace
+\DeclareMathOperator{\diag}{diag} % diagonal
 
 % Figures
 
-\newcommand{\noskipcaption}[1]{\caption{#1}\vspace{-1em}} % caption without additional vertical space
+\newcommand{\noskipcaption}[1]{\caption{#1}\vspace{-\intextsep}} % caption without additional vertical space
 
 % Footnotes
 

@@ -1,0 +1,59 @@
+\chapter{Conclusion and Future Work}\label{ch:conclusion.future.work}
+
+\section{Summary}
+
+The aim of this work was to study, create and evaluate autonomous navigation algorithms allowing a small drone with few sensors (a Tello EDU, mainly with a single RGB frontal camera) to navigate without the supervision of a human pilot in an indoor environment (the corridors of the Montefiore Institute) free of dynamic obstacles. The assumption that the drone has access to a simple representation of its environment was made.
+
+Firstly, after a preliminary review of the state of the art about the subject, a simulated environment was set up to perform initial tests in a safe way and without real world constraints. The simulator chosen was Unreal Engine 4 with the AirSim plugin and two simulated indoor environments have been created.
+
+Secondly, a high-level control interface was designed. The latter is an additional layer to existing drone's manufacturer control interface allowing navigation algorithms to be usable with any drone model.
+
+Thirdly, a representation of the environment, exploitable by the drone, was created. Using a binary occupancy grid, this representation allows the planning of paths and the extraction of information (called \enquote{key point}) such as the position of turns, crossroads and staircases and their associated actions.
+
+Fourthly, based on the implemented resources, several autonomous navigation algorithms have been designed and tested, first on simulator and then in the real world. Vanishing point detection methods, via line detection and neural network, are used to align the drone. Three main methods have been used to design algorithms: image classification (using Deep Learning), depth estimation (using Deep Learning) and markers (ArUco) detection. Initially designed to follow a simple path in a single floor, more advanced techniques to manage staircases but also battery stations have been implemented.
+
+Finally, the future of such autonomous systems, from a technical and legal point of view, was discussed.
+
+\section{Results}
+
+The algorithms developed were tested in the simulator and then in the real world. The obtained results show that it is possible to navigate the drone autonomously: in the majority of cases, the drone successfully reached its objective without any human supervision.
+
+The algorithms working with image classification using Deep Learning models provide good results and seem to be robust to variations in the environment (change of scenery, variation in luminosity, etc.) but have difficulty in handling complex areas (\eg{} crossroads). The latter have been improved by combining the other methods developed (depth estimation and markers). The algorithms working only with depth estimation showed mitigated results: they mainly lacked precision and robustness. The utilization of markers are very reliable but can only be used for a complete navigation if the environment can be prepared in advance. They have therefore been used mainly to improve the robustness of the other algorithms, especially in difficult passages such as crossroads or staircases instead of a real stand-alone solution.
+
+Finally, the more advanced tests concerning staircase passage and battery station management proved successful. Guided mainly by markers, the drone managed to pass simple staircases and to detect a battery station and land on it accurately.
+
+In conclusion, autonomous drone navigation in an indoor environment free of dynamic obstacles is possible based on drone vision only with Deep Learning models, and sometimes guided by markers if possible. Although promising, it is important to keep in mind that the results were obtained in simple environments. In a real-world case, as drones will be flying in complex environments, these methods pave the way for future work on the subject which would mainly aim at improving their robustness and safety.
+
+\section{Future work}
+
+Autonomous navigation of drones is a too complex subject to cover all aspects in a single work. The autonomous systems implemented in this project still have a lot of possible improvements in several aspects.
+
+\subsection{Complex environment}
+
+The environment considered was relatively simple: it consisted mainly of straight lines and right-angle turns. In a more advanced use of drones, more complex environments should be considered: turns of any angle, open areas (\eg{} a large entrance hall), restricted areas and obstacles to cross (\eg{} a door to pass through), etc.
+
+This would imply redesigning not only the representation of the environment but also the way the drone moves: the vanishing point would no longer be specifically adapted to all rooms, turns would no longer be limited to a simple $\SI{90}{\degree}$ rotation, Deep Learning models would have to handle a larger collection of different key points, etc.
+
+\subsection{Dynamic obstacles}
+
+In this work, the environment considered was free of dynamic obstacles (\eg{} a person walking through the corridors). However, these are unavoidable in the real world and must be considered.
+
+Deep learning models of depth estimation have their limitations in detecting unfamiliar and unusual features of the training environment. Object detection models, such as YOLO \cite{redmon2016you}, exist and could allow real-time detection of obstacles.
+
+A simple algorithm could be to analyze, via YOLO, each image captured by the drone and land when a nearby obstacle is detected. As long as the obstacle is present, the drone waits. When the obstacle is no longer in the way, the drone could take off again and continue. A more complex algorithm could implement a way to dodge obstacles during flight.
+
+\subsection{On-board processing}
+
+The Tello EDU is a drone that receives its instructions from a remote computer via Wi-Fi. No processing is directly on board; everything is calculated on an external machine, thus taking advantage of high computing power.
+
+To minimize the delay caused by wireless communication, the drone should process the data itself. This would mean working with limited computing power and would pose a whole series of optimization problems to solve.
+
+As discussed in Chapter \ref{ch:future.autonomous.drones}, cloud computing is a technology that is developing more and more and allows heavy calculations to be carried out on a remote machine. The efficiency, advantages and disadvantages of this technology could be compared to on-board processing in order to obtain an optimal solution according to the needs.
+
+\subsection{Robustness and safety}
+
+If autonomous drones are ever used extensively in society, they must be robust and safe.
+
+A robust drone should be able to minimize errors in its movements and behave appropriately, even if an error is made. Currently, in this work, if a module provides an erroneous prediction, or if a marker is obscured by an obstacle, the drone is very likely to fail to act correctly. This rarely happens in the simple environments considered in this project but could happen more often in complex environments.
+
+A safe drone should be able to act in such a way as to minimize, if not completely avoid, any danger to others. Like other autonomous vehicles, such as cars, the drone could try to predict potential dangers in advance, and thus avoid them, but also communicate with other drones and relay important information. The drone could also maintain a minimum safe distance and fly, at most, at a relatively high altitude.

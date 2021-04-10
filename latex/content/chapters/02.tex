@@ -1,3 +1,133 @@
-\chapter{State of the Art}
+\chapter{State of the Art}\label{ch:sota}
 
-revue de la littérature parcourure et resumé des techniques principales (vision based, RL)
+This chapter is the very first step of this work. It reviews the main concepts of drones and modern techniques for autonomous navigation.
+
+\section{Drone}
+
+A drone or \emph{Unmanned Aerial Vehicle} (UAV) \cite{wikipedia2021uav} is a vehicle capable of flight (\emph{aircraft} \cite{wikipedia2021aircraft}) without a human pilot on board. The vehicle can be either remotely controlled or autonomously piloted.
+
+\subsection{Terminology}
+
+The acronym \enquote{UAV} is the most frequently used to define such a flying vehicle, for amateur or professional applications. However, the latter tends to disappear and be replaced by other terms: \emph{drone}, \emph{Remotely Piloted Aircraft System} (RPAS), \emph{Unmanned Air System} (UAS), etc. \cite{altigator2021drones}
+
+The term \enquote{drone} is increasingly used in the literature and on the Internet. According to the dictionary \emph{Le Robert}, a drone is a \enquote{\emph{small unmanned aircraft on board, remote controlled or programmed}} \cite{lerobert2021drone}. In general, the various terms and acronyms share, at least, these common characteristics in their definition.
+
+Although the acronym \enquote{RPAS} is the one used with international organizations and other national aviation authorities, the term \enquote{drone}, being closer to the one used in the literature, will be preferred and used in this work.
+
+\subsection{Classification}
+
+Based on their mass, drones fall into several categories: the \emph{UAV} for drones with a mass greater than $\SI{25}{\kilo\gram}$, the \emph{Small Unmanned Aircraft System} (sUAV) for drones with a mass less than or equal to $\SI{25}{\kilo\gram}$ and the \emph{Micro Air Vehicle} (MAV) for very small drones weighing less than $\SI{20}{\gram}$. \cite{altigator2021drones}
+
+\subsection{Components}
+
+\emph{The information in this section comes mainly from \cite{studiosport2021composantsdrone}.}
+
+The base (or skeleton) of the drone is called the \emph{chassis} (or \emph{frame} by the professionals). This can have several shapes depending on the type of drone: 3 arms for a \emph{tricopter}, 4 arms for a \emph{quadcopter}, 6 arms for a \emph{hexacopter}, etc. In this work, the popular quadcopters will be considered.
+
+The drone is then composed of a \emph{propulsion system} allowing it to take off, fly and land. This includes motors (rotors), propellers, an electronic speed controller and a battery.
+
+Another important component is the \emph{flight controller}. Composed of an integrated circuit with microprocessor and sensors, this system allows the drone to perceive its environment and to be controlled, either remotely (via RC transmitter and receiver) or autonomously.
+
+Finally, although not compulsory, most drones have a camera (either fixed to the front or to a gimbal) allowing them to see their environment and transmit these images to the pilot or to the autonomous navigation system.
+
+\subsection{Autonomous drone}
+
+\emph{The information in this section comes mainly from \cite{ansys2019autonomousuav} and \cite{skyhopper2021autonomousuav}.}
+
+An autonomous drone is a drone that can perform a series of tasks without human supervision. Currently, technologies already allow for \emph{partially} autonomous drones: these can perform some tasks autonomously in a lot of situations, but still require the supervision of a pilot, although the latter need only rarely intervene.
+
+To create \emph{fully} autonomous drones, current technologies need to be further improved and developed to meet several challenges, particularly in terms of robustness and safety. The main current challenges come from the environments: how to ensure reliability and safety in a complex environment? Drones must not become a danger to people and must be able to be adopted, without nuisance, in the current regulations.
+
+\subsubsection{Artificial Intelligence}
+
+With the development of Artificial Intelligence, and more particularly of Machine Learning methods in recent years, the technologies used for drones have progressed considerably.
+
+Indeed, it is now possible to develop models capable of analyzing images in real time, notably for detecting obstacles. The impressive results obtained by these models are a giant step towards the integration of drones in complex environments, populated by unpredictable obstacles, such as urban environments.
+
+\subsubsection{Applications}
+
+Drones are used for a wide range of applications: surveillance, data collection, monitoring, filming, photography, but also delivery, agriculture, exploration, rescue missions, work tools (for example, for environmental mapping), etc.
+
+Autonomous drones could make it possible to delegate complex tasks, for example monitoring an area during a special event, and thus save time, money and labor. Major manufacturers such as NVIDIA, SenseFly and DJI are actively working on the development of such drones \cite{nvidia2021autonomousuav, sensefly2021drones, dji2021autonomousuav}.
+
+\section{Autonomous navigation}
+
+Autonomous drone navigation is achieved through algorithms that allow the drone to perceive its environment and make decisions based on these perceptions. The scientific literature on the subject is expanding rapidly: a large number of algorithms, increasingly robust to dynamic obstacles and other constraints of complex environments, are emerging.
+
+In general, there are no miracle solutions for autonomous drone navigation. It is a complex task where solutions have to be designed according to the context of use. In an indoor environment, one characteristic is of great importance: the use of GPS data is (almost) impossible. GPS data, when available, does not provide sufficiently accurate data to guide the drone in such a confined environment. Indoor navigation algorithms therefore have to do without GPS data and rely mainly on the drone's other on-board sensors.
+
+The various autonomous indoor navigation algorithms can be grouped into three main categories: techniques using data analysis methods, techniques based essentially on the drone's vision using Deep Learning models and techniques using Reinforcement Learning.
+
+\subsection{Analysis techniques}
+
+Before the development of Machine Learning methods, autonomous navigation techniques were mainly based on the processing of a large quantity of data collected by several sensors, more or less sophisticated.
+
+The work of \textcite{foehn2020alphapilot} focused on the creation of an autonomous drone that had to pass through a series of gates as quickly as possible (in the context of a race). Based on a mathematical model of the drone's dynamics, the Inertial Measurement Unit (IMU), a laser range finder and 4 cameras, they use a \emph{Kalman Filter} to best estimate the state of the drone at any given time and plan its next actions.
+
+The work of \textcite{power2020autonomous} has focused on the navigation of a swarm of drones without GPS. The main goal is that each drone has an estimation of the position of the other drones. They worked with a \emph{Multi-Target Gaussian Conditional Random Field} (MT-GCRF) model to predict, at each time step and based on their last known position and their path traveled (\emph{dead reckoning}), the position of the drones.
+
+\emph{Simultaneous Localization And Mapping} (SLAM) is a method frequently used with drones, and robots in general. The principle consists of building a representation of its environment while keeping track of the robot's position. SLAM can be carried out via \emph{odometry} techniques (estimating the displacement of a robot based on a mathematical model) or based on data acquired via sensors. The work of \textcite{nemati2015autonomous} uses a variant, called \emph{Hector SLAM} \cite{kohlbrecher2011flexible}, with a laser range finder. \textcite{brockers2014towards}, on the other hand, uses a variant of SLAM based on visual data, the \emph{vSLAM}. The inertial data collected by the drone and the data obtained via SLAM are combined via an \emph{Extended Kalman Filter} (EKF) \cite{julier1997new}.
+
+In another register of analysis techniques, the work of \textcite{aguilar2017developing} attempts to approximate drone movements by computing affine transformations between consecutive images of the drone and by tracking the displacement of certain key points.
+
+These analysis techniques usually require several sensors (camera, laser range finder, LIDAR, etc.) that are power hungry and expensive. It is difficult to adopt a real-time navigation solution with small drones in these conditions: the large amount of data is generally difficult to manage and the computation time is too long.
+
+\subsection{Vision-based techniques}
+
+Techniques based on drone vision take advantage of recent advances in image analysis working with Deep Learning models. The latter provide impressive results based solely on images recovered via the drone's camera.
+
+\subsubsection{Deep Learning basics}\label{sec:02.deep.learning.basics}
+
+\emph{The information in this section comes mainly from \cite{goodfellow2016deep}.}
+
+Deep Learning is a branch of Machine Learning. Machine Learning consists of training a model $f$ that can learn to predict some outputs for given data that can be unknown to it. More specifically, the model $f$ is first trained with a large amount of data. Then, it will provide an output $f(x, \theta)$ for an input $x$ where $\theta$ are the parameters of the model, determined via its training.
+
+For example, a Machine Learning model can be trained to take as input an image it has never seen before and predict whether the image contains a specific object (\eg{} a car) or not.
+
+These models need a large amount of data $x_i$ to be trained. When the training data used also contains the output $y_i$ that the model has to predict (for example, a boolean indicating whether the image contains a car or not), we talk about \emph{supervised learning}. In this configuration, the output $f(x_i, \theta)$ of the model can be compared with the expected output $y_i$. The model $f$ can then be trained via a \emph{loss function} $\mathcal{L}(f(x_i, \theta), y_i)$ that compares the outputs. The smaller the value of this function, the closer the model output is to the true output. Training the model then consists in tuning its parameters $\theta$ to minimize the value of $\mathcal{L}$ for all training data $(x_i, y_i)$.
+
+Deep Learning models are complex models inspired by how the human brain works. The models are composed of interconnected \emph{neurons}, distributed in different layers, forming a \emph{neural network}. Their main advantage is that they can handle much larger inputs (\eg{} image) and learn much more complex functions than simple Machine Learning models.
+
+Deep Learning models can also be trained in a supervised manner. The goal is still to minimize a loss function that compare the output of the network with the true output. They generally need a (very) large amount of data to learn correctly, which sometimes makes them difficult to use.
+
+A popular application of these networks concerns image processing, via \emph{Convolutional Neural Networks} (CNN). Such networks can handle very large inputs, typically an image composed of thousands of pixels, using convolution operations.
+
+\subsubsection{Deep Learning-based techniques}
+
+As drones generally all have at least one camera as a sensor, the use of CNN for image processing and navigation is very popular. Generally speaking, the different works try to collect and annotate a large amount of data (drone's images) and train in a supervised way a CNN to perform some tasks (predict an action associated to an image, predict a distance, etc).
+
+\textcite{amer2021deep} have collected a large series of images (between $\num{20000}$ and $\num{40000}$ depending on the environment) on a simulator and have made use of the pre-trained VGG-16 model \cite{simonyan2014very} to extract the \emph{features} from the drone images and then run them through a \emph{Fully Connected Neural Network} (a neural network where each neuron of a layer is connected to all neurons of the next layer) or \emph{Recurrent Neural Network} (a neural network that has a \enquote{memory} thanks to feedback connections and can thus handle data in sequence) to infer a command from the drone. The idea is therefore to associate each image of the drone with an action to be carried out. \textcite{padhy2018deep} have also exploited this idea by teaching the drone, via a pre-trained DenseNet161 \cite{huang2017densely} network, to associate each captured image with a simple action such as \enquote{move forward}, \enquote{rotate left}, \enquote{rotate right} or \enquote{stop}.
+
+In the same vein, \textcite{lee2021deep} use several CNNs to analyze the images and detect the various obstacles. They argue that the networks provide very good and resource-efficient obstacle detection compared to methods using sensors such as LIDAR.
+
+An original idea was also proposed by \textcite{gandhi2017learning}: teach the drone how not to fly. More precisely, they collected a large data set of images of the drone just before an impact with an obstacle. Through training using the AlexNet \cite{krizhevsky2012imagenet} network, they taught the drone to detect dangerous areas where it could crash. Thus, by avoiding all (static) obstacles, the drone is able to follow a simple trajectory autonomously.
+
+\textcite{kouris2018learning} have, for their part, worked with distances inferred via CNNs. More precisely, they collected a large data set of images, cut them vertically into 3 zones (left, central and right) and annotated each zone, via appropriate sensors, with a distance to the nearest feature in that zone. Based on this data, their model learned to predict, for an input image, 3 distances. Working with several distances allows a more accurate perception of the environment and thus a more precise control of the drone.
+
+The work of \textcite{wang2020uav} shows that it is also possible to combine Deep Learning models and advanced sensors. They used an Intel RealSense D435 \cite{intel2021realsense} (a depth camera) to obtain depth maps and combined these results with inferred object detection via the YOLO v3 model \cite{redmon2018yolov3}. Their system is then able to detect obstacles, calculate the distance of the drone to them and maneuver to avoid them.
+
+The work of \textcite{chen2018uavnet} is also very interesting. The authors have developed a network, \emph{UAVNet}, capable of detecting obstacles in real time. The focus was on optimization so that the network could be embedded in miniature drones with few resources and still act in real time.
+
+Many other similar works are available on the subject. All of them show that, with current technologies, it is possible to replace expensive and time-consuming sensors with much more efficient Deep Learning models, obtaining nearly similar results. One of the main challenges of these models is the collection of data for proper training. To facilitate this task, work has been done on \emph{Transfer Learning} \cite{lu2017cultivated, kucuksubasi2018transfer}. The idea is to train a model on synthetic images, for example collected on a simulator, and then use it directly in the real world (or adapting it slightly by a small training with real world images if necessary). This procedure can allow to avoid collecting a lot of images in the real world, which is sometimes difficult or not possible.
+
+\subsection{Reinforcement Learning}
+
+\emph{Reinforcement Learning} (RL) is a branch of Machine Learning where an agent learns a behavior via interactions with its environment. More precisely, the agent interacts via actions and receives \emph{rewards} for each of its actions. The goal being to maximize its rewards, the agent learns by trials and errors to interact optimally with its environment; it infers, from its experiences, an optimal \emph{policy}.
+
+\emph{Deep Reinforcement Learning} (DRL) combines Reinforcement Learning and Deep Learning methods. Neural networks are used as an approximator of unknown functions, allowing to handle very large perceptions of the environment (\eg{} images). DRL techniques have been very successful in recent years, particularly in the field of games \cite{shao2019survey} (notably the famous example of \emph{AlphaGo} \cite{silver2016mastering}), but also in robotics \cite{kober2013reinforcement}.
+
+Reinforcement Learning has also been explored in the drone domain. By considering the drone as the agent, and discretizing its actions into \enquote{move forward}, \enquote{turn} and \enquote{stop}, \textcite{imanberdiyev2016autonomous} have developed the TEXPLORE algorithm that allows the drone to find the optimal path, from a starting point to an objective, in an unknown environment by managing its battery level via available charging stations. In the same vein, \textcite{pham2018autonomous} used a simple \emph{Q-learning} algorithm to guide the drone through an unknown environment.
+
+Based on more complex models and combined with image analysis via CNNs, the works of \textcite{walker2019deep}, \textcite{wang2019autonomous}, \textcite{he2020explainable} and \textcite{guerra2020reinforcement} show that it is possible to teach the drone optimal policy in complex environments.
+
+However, these Reinforcement Learning methods are more complex than simple image analysis methods via Deep Learning. Indeed, the latter are difficult to converge towards good results and require large computing resources. Moreover, they are difficult to apply to the real world. It seems difficult to train a drone to navigate by trial and error, knowing that each mistake (hitting a wall, for example) is likely to damage the drone.
+
+As with Deep Learning, the use of Transfer Learning has been considered. The idea is to reproduce a similar environment in a simulator so that the drone learns to infer an optimal policy. This policy is then adapted to the real world. We can note the work of \textcite{anwar2020autonomous} on the subject.
+
+\section{Application to this work}
+
+In this work, a drone with mainly a monocular RGB front camera is used. As it is not equipped with multiple sensors, it is interesting to explore image analysis methods, using classical Computer Vision methods or via Deep Learning models. The idea is to look at the autonomous navigation of a small \emph{low-cost} drone: how capable is a drone of flying alone based on mainly its front camera data?
+
+Multiple ideas coming from papers mentioned earlier has been used: the work of \textcite{padhy2018deep} has been chosen as a basis for this project: the model used by the authors, the navigation algorithm as well as the evaluation metrics have been taken up, used, discussed and improved. The idea of separating the images in several zones in order to multiply the information (\textcite{kouris2018learning}) was also taken up, in particular to guide the drone via a depth estimation. Finally, the idea of Transfer Learning (widely exploited in the work of \textcite{anwar2020autonomous}) has been tested (however, unlike the work of \textcite{anwar2020autonomous}, Transfer Learning has been tested with the CNNs used and not with Reinforcement Learning algorithms).
+
+Concerning Reinforcement Learning, only a few simple tests have been performed (these are presented in Appendix \ref{ch:reinforcement.learning.approach}). Being a rich and complex family of methods, it is difficult to combine vision-based methods and Reinforcement Learning methods in a single work. The latter are therefore left for future work on the subject.

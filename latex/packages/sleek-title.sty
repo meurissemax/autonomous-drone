@@ -1,4 +1,4 @@
-\ProvidesPackage{sleek-title}[2020/10/28 v1.0 Sleek Titlepage]
+\ProvidesPackage{sleek-title}[2021/06/04 v1.1.0 Sleek Title]
 
 %%%%%%%%%%%%%%%%
 % Requirements %
@@ -34,7 +34,7 @@
 
 \newcommand*{\adjustheight}{ % saves the height of the top and bottom mini-pages in \miniheight
     \countlines{\bfseries\huge\@title}
-    \FPeval{\miniheight}{0.435 - 0.02 * (\numlines - 1)}
+    \FPeval{\miniheight}{0.44 - 0.02 * (\numlines - 1)}
 }
 
 % Custom fields
@@ -47,13 +47,13 @@
 \newif\ifSupervisor
 \newif\ifContext
 
-\newcommand*{\logo}[1]{\gdef\@logo{#1}\global\Logotrue}
-\newcommand*{\institute}[1]{\gdef\@institute{#1}\global\Institutetrue}
-\newcommand*{\faculty}[1]{\gdef\@faculty{#1}\global\Facultytrue}
-\newcommand*{\department}[1]{\gdef\@department{#1}\global\Departmenttrue}
-\newcommand*{\subtitle}[1]{\gdef\@subtitle{#1}\global\Subtitletrue}
-\newcommand*{\supervisor}[1]{\gdef\@supervisor{#1}\global\Supervisortrue}
-\newcommand*{\context}[1]{\gdef\@context{#1}\global\Contexttrue}
+\newcommand*{\logo}[1]{\gdef\@logo{#1}\Logotrue}
+\newcommand*{\institute}[1]{\gdef\@institute{#1}\Institutetrue}
+\newcommand*{\faculty}[1]{\gdef\@faculty{#1}\Facultytrue}
+\newcommand*{\department}[1]{\gdef\@department{#1}\Departmenttrue}
+\newcommand*{\subtitle}[1]{\gdef\@subtitle{#1}\Subtitletrue}
+\newcommand*{\supervisor}[1]{\gdef\@supervisor{#1}\Supervisortrue}
+\newcommand*{\context}[1]{\gdef\@context{#1}\Contexttrue}
 
 %%%%%%%%%%%%%%
 % Title-page %
@@ -61,21 +61,22 @@
 
 \renewcommand*{\maketitle}{%
     \adjustheight
-    \newgeometry{margin = 2.5cm}
+    \newgeometry{margin=2.5cm}
     \begin{titlepage}
+        \setlength{\parindent}{0pt}
         \begin{minipage}[t][\miniheight\textheight]{\textwidth}
             \begin{center}
                 \ifLogo
                     \includegraphics[height=0.15\textheight]{\@logo}
                 \fi
                 \vfill
-                {\scshape\ifInstitute\LARGE\@institute\fi\ifFaculty\ifInstitute\\[0.125em]\fi\Large\@faculty\fi\ifDepartment\\[0.25em]\large\@department\fi\clearpar}
+                {\scshape\ifInstitute\LARGE\@institute\fi\ifFaculty\ifInstitute\\[0.25ex]\fi\Large\@faculty\fi\ifDepartment\\[0.5ex]\large\@department\fi\clearpar}
                 \vfill
             \end{center}
         \end{minipage}
         \vfill
         \begin{minipage}{\textwidth}
-            \begin{mdframed}[linewidth=2pt, innertopmargin=1.5em, innerbottommargin=1.5em, leftline=false, rightline=false]
+            \begin{mdframed}[linewidth=2pt, innertopmargin=3ex, innerbottommargin=3ex, leftline=false, rightline=false]
                 \begin{center}
                     {\bfseries\huge\@title\clearpar}
                 \end{center}

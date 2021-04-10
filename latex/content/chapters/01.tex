@@ -1,3 +1,62 @@
 \chapter{Introduction}
 
-expliquer la problématique, le contexte et les difficultés, les différents élements abordés dans ce travail et la structure du document
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\section{Context}
+
+Unknown to the public a few years ago, drones are now at the center of many technological innovations. Initially created for military purposes \cite{wikipedia2021uav, interestingengineering2021uav}, these remotely piloted flying machines are now used in a wide range of applications: photography, journalism, sporting and festive events, rescue missions, delivery of goods, etc. From models measuring several meters to miniature ones barely larger than a hand, these machines tend to facilitate, even replace, human work.
+
+Initially very expensive, drones have now been democratized and are easily accessible. Their popularity is often due to their main advantage: they can be piloted remotely. Unlike ground vehicles (\eg{} cars, trucks, robots) or aerial ones (\eg{} airplanes, helicopters), drones can quickly venture into unreachable or dangerous areas without endangering their pilots.
+
+All these applications have a price: an experienced pilot, even a licensed one, is necessary for a correct and safe flight. Technological advances in recent years have attempted to relax this requirement by creating autonomous navigation systems. Initially based on the use of many sensors and extensive data processing, these systems now take advantage of Artificial Intelligence, and more specifically Deep Learning models and intelligent data processing. Autonomous navigation allows the drone to understand its environment and to fly without any human intervention.
+
+Despite the impressive obtained results, autonomous drone navigation remains a difficult subject with no miracle solution for the moment. Indeed, a whole series of problems arise quite quickly: how to understand the environment correctly when it can be vast and open (\eg{} parks, gardens, cities, roads, countryside), closed and restricted (\eg{} houses, building corridors) and totally unpredictable (\eg{} a pedestrian, a car, an unexpected obstacle)? How to navigate in an organized way (\eg{} a swarm of drones) and in a totally safe way (\eg{} avoid any accident)?
+
+Autonomous navigation of drones is a current topic in full development in the scientific world. The techniques are difficult to generalize because they are very specific to the application for which they were developed. The processing of large amounts of data obtained via power-limited on-board hardware makes smooth real-time navigation difficult. These technical challenges are at the heart of the research carried out on the subject nowadays.
+
+\section{Objective}
+
+The objective of this work is to explore modern techniques in the scientific literature and to develop and evaluate autonomous navigation algorithms that allow a small drone to move without human pilot supervision in an indoor environment free of dynamic obstacles.
+
+More specifically, the drone studied is a Tello EDU and the indoor environment considered is the main building of the Montefiore Institute of the University of Liège (\ie{} a series of corridors). The Tello EDU is a small drone measuring only about $\SI{10}{\centi\meter}$ and having, as main sensor, a monocular RGB front camera.
+
+This work will focus on the implementation of image analysis techniques (using, among others, Deep Learning models) allowing an autonomous navigation with limited capacities and sensors. The tests will first be carried out on a simulator and then tested in the real world.
+
+\begin{note}
+    This project has been realized in parallel with several projects on drones; the final goal being to bring together the different works to obtain a personalized autonomous drone controllable by voice command. Another subject already specifically dealing with the discovery and mapping of an environment, this work will focus on the navigation aspects: determining a path from the starting point to the objective, tackling turns, adjusting without human intervention, etc.
+
+    In this work, we therefore consider that the drone already has access to a simple representation of its environment.
+\end{note}
+
+\section{Organization}
+
+The rest of this document is organized as follows.
+
+First, in order to better understand the subject and to situate the problem, Chapter \ref{ch:sota} reviews the state of the art of drones and autonomous navigation techniques.
+
+Second, the different resources needed for the implementation and testing of autonomous navigation algorithms are set up: Chapter \ref{ch:simulated.environment} presents the Unreal Engine simulator and the two simulated environments created, Chapter \ref{ch:controllers} describes in detail the considered drone models and the implemented controllers, and Chapter \ref{ch:environment.representation} explains the representation of the environment used by the drone to help navigation.
+
+Third, Chapter \ref{ch:autonomous.navigation} focuses on autonomous navigation: a generic autonomous navigation algorithm is first defined. Then, methods to align the drone on a straight trajectory using the vanishing point and different image analysis methods to autonomously guide the drone are implemented: image classification and depth estimation via Deep Learning models, detection of particular key points (\eg{} turns) via the detection and decoding of QR codes and ArUco markers, staircase passage via these same markers and management of battery stations located in the environments. Based on the generic algorithm and the different implemented methods, navigation algorithms are created and tested in simulated environments.
+
+Fourth, Chapter \ref{ch:real.world.testing} takes all the implemented methods and algorithms and tests them in the Montefiore Institute to autonomously control the Tello EDU. The different difficulties brought by the transition to the real world are discussed.
+
+Finally, Chapter \ref{ch:future.autonomous.drones} addresses the potential future of autonomous drones and Chapter \ref{ch:conclusion.future.work} concludes with a summary of the obtained results and ideas for future work on the subject.
+
+\section{Resources}\label{sec:01.resources}
+
+The various resources of this project are open source.
+
+All the algorithms mentioned in this document are mainly implemented in Python and available on the following GitHub:
+
+\begin{center}
+    \url{https://github.com/meurissemax/autonomous-drone}
+\end{center}
+
+The latter also contains links to the simulator resources, the simulated environments created and the data sets built.
+
+The main obtained results are illustrated by means of short videos available via the following YouTube playlist:
+
+\begin{center}
+    \url{https://youtube.com/playlist?list=PLJEcTQrQgiVdacuc2HymqLV9RqjaRMNYt}
+\end{center}

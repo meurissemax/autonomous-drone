@@ -1,0 +1,82 @@
+\chapter{Neural Networks Architectures}\label{ch:neural.networks.architectures}
+
+The architectures of the different neural networks used in this work are shown in this appendix.
+
+\section{DenseNet models}
+
+Two versions of the DensetNet model \cite{huang2017densely} were used in this work: DenseNet-121 and DenseNet-161. Pre-trained versions of these models were imported (from PyTorch) and modified. The modifications made are presented in Tables \ref{tab:B.densenet.121} and \ref{tab:B.densenet.161}.
+
+All input images are RGB (3 channels) images of size $320 \times 180$. By default, when these networks are trained, the pre-trained layers are not frozen and are therefore also updated.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        \textbf{Layer} & \textbf{Neurons} & \textbf{Kernel} & \textbf{Stride} & \textbf{Padding} \\ \hline
+        \hline
+        Conv1 & 3 & 1 & 1 & 0 \\ \hline
+        \rowcolor{LightGray}
+        \multicolumn{5}{|c|}{Usual DenseNet-121 architecture \cite{huang2017densely}} \\ \hline
+        Conv2 & 128 & 5 & 1 & 0 \\ \hline
+        Conv3 & 16 & 1 & 1 & 0 \\ \hline
+        Flatten & - & - & - & - \\ \hline
+        Dense & 2 & - & - & - \\ \hline
+    \end{tabular}
+    \caption{Modified architecture of the DenseNet-121 neural network.}
+    \label{tab:B.densenet.121}
+\end{table}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        \textbf{Layer} & \textbf{Neurons} & \textbf{Kernel} & \textbf{Stride} & \textbf{Padding} \\ \hline
+        \hline
+        Conv1 & 3 & 1 & 1 & 0 \\ \hline
+        \rowcolor{LightGray}
+        \multicolumn{5}{|c|}{Usual DenseNet-161 architecture \cite{huang2017densely}} \\ \hline
+        Conv2 & 1024 & 1 & 1 & 0 \\ \hline
+        Conv3 & 128 & 5 & 1 & 0 \\ \hline
+        Conv4 & 16 & 1 & 1 & 0 \\ \hline
+        Flatten & - & - & - & - \\ \hline
+        Dense & 2 & - & - & - \\ \hline
+    \end{tabular}
+    \caption{Modified architecture of the DenseNet-161 neural network.}
+    \label{tab:B.densenet.161}
+\end{table}
+
+All the activation functions used are ReLU, except for the final layer which is a Softmax.
+
+\section{Personal model}
+
+A custom convolutional neural network has been designed: SmallConvNet. The architecture of the latter is shown in Table \ref{tab:B.smallconvnet}.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        \textbf{Layer} & \textbf{Neurons} & \textbf{Kernel} & \textbf{Stride} & \textbf{Padding} \\ \hline
+        \hline
+        Conv1 & 3 & 1 & 1 & 0 \\ \hline
+        DoubleConv1 & 32 & 3 & 1 & 0 \\ \hline
+        MaxPool & - & - & - & - \\ \hline
+        DoubleConv2 & 32 & 3 & 1 & 0 \\ \hline
+        MaxPool & - & - & - & - \\ \hline
+        DoubleConv3 & 64 & 3 & 1 & 0 \\ \hline
+        MaxPool & - & - & - & - \\ \hline
+        DoubleConv4 & 64 & 3 & 1 & 0 \\ \hline
+        MaxPool & - & - & - & - \\ \hline
+        DoubleConv5 & 128 & 3 & 1 & 0 \\ \hline
+        MaxPool & - & - & - & - \\ \hline
+        Dropout & - & - & - & - \\ \hline
+        Flatten & - & - & - & - \\ \hline
+        Dense & 4096 & - & - & - \\ \hline
+        Dense & 2048 & - & - & - \\ \hline
+        Dense & 128 & - & - & - \\ \hline
+        Dense & 2 & - & - & - \\ \hline
+    \end{tabular}
+    \caption{Architecture of the SmallConvNet network.}
+    \label{tab:B.smallconvnet}
+\end{table}
+
+All max pool layers have a kernel size of $2$. The drop out layer has a probability of $\num{0.8}$. All the activation functions used are ReLU, except for the final layer which is a Softmax.

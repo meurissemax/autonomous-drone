@@ -1,3 +1,11 @@
-\chapter{Appendix chapter}
+\chapter{Technical Specifications}\label{ch:technical.specifications}
 
-to do
+In order to be able to reproduce the various tests carried out in this project, this appendix lists the precise technical specifications of the various elements used.
+
+The simulator used is Unreal Engine 4\footnote{\url{https://www.unrealengine.com/}} (version 4.25.4) with the AirSim\footnote{\url{https://microsoft.github.io/AirSim/}} plugin from Microsoft. As the latter is still actively under development, a version directly cloned from the official GitHub\footnote{\url{https://github.com/microsoft/AirSim}} was used. As it is updated very regularly, it is difficult to give the exact version used in this project. However, the AirSim files used can be found directly on the official GitHub\footnote{\url{https://github.com/meurissemax/autonomous-drone}} of this project. The Unreal Engine plugin corresponding to this version is embedded directly in the simulated environments created for this work.
+
+All simulations and algorithm performances were tested on a computer running Windows 10, with an AMD Ryzen 7 3700X 8-Core ($\SI{3.6}{\giga\hertz}$) processor, and NVIDIA GeForce GTX 970 graphics card and $\num{32}$ GB of RAM. The training of most of the Deep Learning models was performed on the Montefiore GPU cluster (\enquote{Alan GPU Cluster}\footnote{\url{https://github.com/montefiore-ai/alan-cluster}}).
+
+The real drone used is a (DJI) Tello EDU\footnote{\url{https://www.ryzerobotics.com/tello-edu}} (2020 model).
+
+The programming language used for this project is Python 3\footnote{\url{https://www.python.org}} (version 3.8.8). A file \texttt{environment.yml} is available on the official GitHub of the project to install all necessary dependencies. The Deep Learning models have been built with the PyTorch\footnote{\url{https://pytorch.org}} framework.

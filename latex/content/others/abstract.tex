@@ -1,22 +1,41 @@
-\chapter*{\centering \textit{Abstract}}
+\newgeometry{margin=2.5cm, top=0cm}
+\chapter*{\centering \normalfont\textit{Abstract}}
+\pagenumbering{roman}
+\markboth{}{}
 
 \begin{minipage}[t][0.25\textheight]{\textwidth}
+    \noindent\rule{\textwidth}{1pt}
+    \vspace{0.2em}
     \begin{center}
         \makeatletter
 
-        {\scshape\Large\@institute}\vspace{1.5em}\\
-        {\large\@faculty}\vspace{0.5em}\\
-        \@department\vspace{1.5em}\\
+        {\scshape\Large\@institute}\vspace{0.7em}\\
+        {\large\@faculty}\vspace{1.5em}\\
 
-        {\bfseries \@title}\vspace{1em}\\
-        by Maxime \textsc{Meurisse}
+        {\bfseries\large\@title}\vspace{1.5em}\\
+
+        Maxime \textsc{Meurisse}\\
+        Supervised by Pr. Pierre \textsc{Geurts} and Ir. Christophe \textsc{Greffe}\\
+        \@date
 
         \makeatother
     \end{center}
+    \vspace{0.2em}
+    \noindent\rule{\textwidth}{1pt}
 \end{minipage}
 
-Nowadays, UAVs are used in a wide range of tasks and are highly valued in a variety of sectors: aerial imaging, filming, area exploration, etc. Their popularity has grown steadily in recent years. Indeed, they are small, fast and much cheaper than the technologies used before them.
+Recent research is attempting to develop autonomous navigation algorithms that allow drones to navigate without the supervision of a pilot. Although the obtained results are promising, there are still many difficulties and no perfect solution, for the moment, exists.
 
-However, a UAV requires a trained and experienced pilot. This may be a limitation to the automation of UAVs for certain tasks such as parcel delivery, for example. Moving UAVs without human intervention is a real technical challenge.
+This work is a research and development project on autonomous navigation algorithms for a small programmable drone in indoor environments free of dynamic obstacles. Practically, a Tello EDU has been chosen as the reference drone and the corridors of the Montefiore Institute have been considered as the environment. The hypothesis that the drone has access to a simple representation of its environment, in order to plan paths and analyze them, was posed.
 
-\thispagestyle{empty}
+First developed in a simulated environment and then adapted to the real world, algorithms working with Deep Learning models to perform image classification and depth estimation, and ArUco markers have been implemented and evaluated. More advanced elements such as battery station management or staircase passage are also addressed. Using a generic controller, developed in the framework of this work, these algorithms can be used on any drone model.
+
+The tests carried out show that the drone can fly a simple path, from a starting point to an objective, in a completely autonomous way. The different methods studied have their strengths and weaknesses, discussed in this work. The main limitation of the developed algorithms is their robustness to errors and unexpected events. Several possible solutions are discussed.
+
+Finally, this work ends by addressing the technological future of such systems, their integration into our modern society as well as their technical and legal limitations and dangers.
+
+\vspace{1.5em}
+
+\noindent\textit{\textbf{Keywords}: autonomous-drone; indoor-environments; deep-learning; computer-vision.}
+
+\restoregeometry

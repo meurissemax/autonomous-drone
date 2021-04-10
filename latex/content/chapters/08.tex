@@ -1,3 +1,67 @@
-\chapter{Conclusion and future work}
+\chapter{Future of Autonomous Drones}\label{ch:future.autonomous.drones}
 
-aborder le RL ?
+This work focused on the realization of autonomous navigation algorithms for miniaturized drones in indoor environments free of dynamic obstacles. However, this is only a small part of the very rich and growing field of autonomous drones.
+
+In order to further develop such systems, it is interesting to ask about their future: are current technologies suitable for developing such systems in all kinds of environments and situations? Are they viable in our society? Can they replace humans in their work in the near future? Do current laws allow such integration?
+
+As a prelude to the conclusion, this chapter looks at the future of autonomous drones, from a technical and legal point of view.
+
+\section{Technical point of view}
+
+\emph{The information in this section comes, mostly, from \cite{floreano2015science}.}
+
+Autonomous drones are a real technological challenge. Despite their small size, they are generally equipped with multiple sensors allowing them to perceive their environment. Technological advances aim to improve and optimize these flying machines and their components as much as possible.
+
+\subsection{Data processing}
+
+An autonomous drone usually collects a very large amount of data from its multiple sensors. This data requires processing, sometimes time-consuming, which can slow down the drone and prevent smooth real-time navigation. Although processors and graphics cards are evolving and becoming smaller, it seems difficult to envisage complete processing of all the data directly on board the drone, especially with complex sensors or huge Deep Learning models.
+
+One solution is to use cloud technologies. Powerful Artificial Intelligence models, constantly fed with data, could run and perform heavy calculations remotely. The drone would transmit its data to the servers and receive analysis and results. This would drastically reduce their computing load.
+
+However, for smooth and fast navigation, the transmission and reception of data must be very fast. Currently, even the fastest 4G network is limited in performance for such transmission. Recently, autonomous flight trials using 5G have shown very promising results \cite{percepto2021future}: the very high data rate of 5G has allowed for better real-time video quality and faster data processing.
+
+In a future where big data will be the main driver of autonomous systems, and where processing operations will be done in the cloud, a development of fast communication means is essential.
+
+\subsection{Communication}
+
+A drone can act alone but also in collaboration with other drones. We then talk about a \enquote{drone swarm}. To be effective, a swarm of drones must be able to manage itself for a large part of the operations: each drone must know the position of its neighbors, all the drones must be able to coordinate, etc. To this end, good communication between each drone is essential.
+
+Communication does not stop with swarming drones. One could imagine communication between autonomous systems (\eg{} between autonomous cars and autonomous drones) for fast and efficient transmission of information (\eg{} warning of imminent danger).
+
+Good communication is really one of the keys to successful autonomous systems. Whether they are a swarm drones or other machine, means of communication, directly between devices or passing through relays, exploiting notably 5G, are studied, for example in \cite{campion2018uav} or \cite{zeng2017energy}.
+
+\subsection{Battery}
+
+The battery is one of the main limitations of drones. Ranging from a few minutes on average to several hours for the most powerful drones, it does not allow for long term use.
+
+This problem, which also affects many technological devices, is constantly improving: the batteries produced are increasingly powerful and the technologies increasingly efficient, thus reducing battery usage.
+
+However, due to the very small size of some drone models, there will always be a physical limitation. One solution would be to set up drone charging stations (much like charging stations for electric cars). The drone could locate these stations and land there to charge. These stations could be placed in places such as building roofs, for example. Such technologies have already been studied, for example in \cite{edronic2021battery} or \cite{rohan2018development}.
+
+\subsection{Limits of artificial intelligence}
+
+Modern artificial intelligence methods, such as the ones explored in this work, are able to perform complex tasks. However, it is interesting to reflect on their limits: are these methods reliable? To what extent can we trust them?
+
+These systems work on the basis of training on large amounts of data. If these data are biased, for example because of wrong annotations or because they are too specific to a particular situation, the models may not work correctly in all situations. Moreover, the collection of this data may raise confidentiality issues: would an autonomous drone be allowed to keep the images captured in an urban environment, potentially containing the identities of several people?
+
+Finally, although powerful, these systems have a cost: a powerful hardware is necessary to realize the trainings and large storage bays are necessary to keep the large quantities of data used.
+
+It is obvious that artificial intelligence systems will be at the heart of the development of new technologies, such as autonomous drones, but it is important to keep in mind the various existing limitations and to say that these models are far from perfect.
+
+\section{Legal point of view}
+
+The rules concerning drones are managed by competent authorities depending on the geographical area. In Europe, it is the European Union Aviation Safety Agency (EASA) \cite{easa2021website} that has set the main rules.
+
+Each country also provides regulations concerning drones. For example, the Belgian State has a Royal Decree (10 April 2016) on the use of remotely piloted aircraft on its territory \cite{assurancedronebe2021website}. In general, drones do not yet have unified international regulations. As they are developing very rapidly, the laws sometimes struggle to keep up with the technological advances in the field.
+
+Indeed, drones qualified as autonomous by the EASA (\enquote{\emph{An autonomous drone is able to conduct a safe flight without the intervention of a pilot. It does so with the help of artificial intelligence, enabling it to cope with all kinds of unforeseen and unpredictable emergency situations.}} \cite{easa2021autonomousuav}) fall in a category called \enquote{specific}. The latter requires the pilot to make a declaration, or even obtain authorization from the agency, for the flight of the drone. In addition, a wide range of constraints are imposed: there must always be a pilot associated with the drone and this pilot must be present during the flight, the drones can only fly in areas designated for this purpose, and these areas generally exclude public urban areas.
+
+In general, the limitations are still too strong to expect to see autonomous drones in tomorrow's society. Moreover, there is no international consensus on these limitations. Although technologies are evolving rapidly, laws need to adapt to see such systems develop.
+
+\section{Discussion}
+
+At present, the technologies are still under development and the laws are not sufficiently adapted to expect to see fully autonomous drones in our society in the very near future.
+
+Nevertheless, it is clear that drones will be an integral part of our society within a few years. Their multiple applications and benefits are no longer up for debate. A large number of companies focusing on drones have emerged in recent years, gradually pushing these machines to become more popular and democratic, while becoming more sophisticated.
+
+Among others, we can notably mention the company Humanitas \cite{humanitas2021website} working with drones for rescue missions. Founded about ten years ago by a doctor who realized the critical lack of technology during catastrophic situations (\eg{} the earthquake in Haiti in 2010), the company now provides solutions working with one or more autonomous drones to map an environment, locate people, extend a communication network, and many other applications.
