@@ -8,7 +8,7 @@ The settings of the AirSim plugin used are available [here](airsim/settings.json
 
 ## Environments
 
-Two environments have been designed using Unreal Engine 4 (version `4.25`):
+Two environments have been designed using Unreal Engine 4 (version `4.25.4`):
 
 * Indoor Corridor ([https://youtu.be/cz1zRka21UY](https://youtu.be/cz1zRka21UY));
 * Indoor Staircase ([https://youtu.be/muzKT-dCab4](https://youtu.be/muzKT-dCab4)).

@@ -1,8 +1,10 @@
 # Autonomous navigation of a UAV in an indoor environment
 
-Nowadays, UAVs are used in a wide range of tasks and are highly valued in a variety of sectors: aerial imaging, filming, area exploration, etc. Their popularity has grown steadily in recent years. Indeed, they are small, fast and much cheaper than the technologies used before them.
+This work was a research and development project on autonomous navigation algorithms for a small programmable UAV (a Tello EDU) in an indoor environment free of dynamic obstacles. The hypothesis that the UAV has access to a simple representation of its environment, in order to plan paths and analyze them, was posed.
 
-However, a UAV requires a trained and experienced pilot. This may be a limitation to the automation of UAVs for certain tasks such as parcel delivery, for example. Moving UAVs without human intervention is a real technical challenge.
+## Context
+
+This work was carried out in the framework of my master thesis conducted for obtaining the Master's degree in Computer Engineering (academic year 2020-2021, [University of Liège](https://uliege.be/), [Faculty of Applied Science](https://facsa.uliege.be/)).
 
 ## Main objective
 
@@ -10,9 +12,9 @@ The main objective of this work was to explore and test modern techniques allowi
 
 The main techniques explored are:
 
-* the use of markers (ArUco, QR code) to guide the UAV;
 * the calculation of vanishing point to adjust the UAV;
-* the use of neural networks for various tasks (associating an action to an image, computing vanishing point, depth estimation).
+* the use of neural networks for various tasks (associating an action to an image, computing vanishing point, depth estimation);
+* the use of markers (ArUco, QR code) to guide the UAV.
 
 Tests were first performed on a simulator ([Unreal Engine 4](https://www.unrealengine.com/) with the [AirSim](https://microsoft.github.io/AirSim/) plugin) and then in the corridors of a building with a [DJI Tello EDU](https://www.ryzerobotics.com/tello-edu).
 
@@ -59,7 +61,7 @@ conda activate autonomous-uav
 Then, you can simply run the [`navigate.py`](python/navigate.py) script using, for example,
 
 ```bash
-python navigate.py --environment my_env.txt --controller airsim --algorithm naive --show
+python navigate.py --environment my_env.txt --controller airsim --algorithm vision --show
 ```
 
 Help with arguments can be obtained via
@@ -83,10 +85,6 @@ python learn.py --help
 ```
 
 Exemples of ready-to-use data sets are available [here](resources/data/README.md).
-
-## Context
-
-This work was carried out in the framework of my master thesis conducted for obtaining the Master's degree in Computer Engineering (academic year 2020-2021, [University of Liège](https://uliege.be/), [Faculty of Applied Science](https://facsa.uliege.be/)).
 
 ## References
 
