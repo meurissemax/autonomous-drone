@@ -36,26 +36,6 @@ from learning.models import DenseNet, SmallConvNet, UNet, MiDaS  # noqa: E402
 # Functions #
 #############
 
-def _distance(depth: np.array) -> float:
-    """
-    Compute distance to element in front of the camera based on depth image.
-    """
-
-    # Dimensions
-    h, w = depth.shape
-
-    # Crop the image to keep center box
-    mx, my = w // 2, h // 2
-    dx, dy = w // 10, h // 10
-
-    cropped = depth[(my - dy):(my + dy), (mx - dx):(mx + dx)]
-
-    # Compute distance
-    distance = 3000 / np.mean(cropped)
-
-    return distance
-
-
 def _vanishing(input_pth: str, outpt: torch.tensor) -> np.array:
     """
     Draw grid on an image and color in green the cell that contains the
@@ -194,8 +174,6 @@ def main(
         elif model_id == 'midas':
             depth = outpt.numpy()
             plt.imsave(output_pth, depth, cmap='plasma')
-
-            print(f'Distance: {_distance(depth)}')
         else:
             print(f'Output: {outpt}')
 

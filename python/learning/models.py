@@ -100,7 +100,8 @@ class DenseNet(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        densenet_id: str = '121'
+        densenet_id: str = '121',
+        freeze: bool = False
     ):
         super().__init__()
 
@@ -124,6 +125,11 @@ class DenseNet(nn.Module):
 
         # Remove last layer
         self.densenet = nn.Sequential(*list(self.densenet.features))
+
+        # Freeze pre-trained model, if necessary
+        if freeze:
+            for param in self.densenet.parameters():
+                param.requires_grad = False
 
         # New layers
         self.first = Conv(in_channels, 3)
