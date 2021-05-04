@@ -15,7 +15,9 @@ from uav.navigation import (
     VanishingAlgorithm,
     VisionAlgorithm,
     MarkerAlgorithm,
-    DepthAlgorithm
+    DepthAlgorithm,
+    VisionDepthAlgorithm,
+    VisionMarkerAlgorithm
 )
 
 
@@ -47,7 +49,9 @@ def main(
         'vanishing': VanishingAlgorithm,
         'vision': VisionAlgorithm,
         'marker': MarkerAlgorithm,
-        'depth': DepthAlgorithm
+        'depth': DepthAlgorithm,
+        'visiondepth': VisionDepthAlgorithm,
+        'visionmarker': VisionMarkerAlgorithm
     }
 
     algorithm = algorithms.get(algorithm_id)
@@ -86,7 +90,15 @@ if __name__ == '__main__':
         '--algorithm',
         type=str,
         default='naive',
-        choices=['naive', 'vanishing', 'vision', 'marker', 'depth'],
+        choices=[
+            'naive',
+            'vanishing',
+            'vision',
+            'marker',
+            'depth',
+            'visiondepth',
+            'visionmarker'
+        ],
         help='navigation algorithm to use'
     )
 

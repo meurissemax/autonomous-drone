@@ -14,6 +14,7 @@ import torchvision.transforms as transforms
 
 from abc import ABC, abstractmethod
 from functools import partial
+from itertools import product
 from typing import List, Tuple, Union
 
 from analysis.markers import ArucoOpenCV, QROpenCV, QRZBar
@@ -164,8 +165,7 @@ class AnalysisVanishingModule(VanishingModule):
 class MarkerModule(NavModule):
     """
     Module that reads the content of a marker, if any, and returns it along
-    with coordinates of its corner points and ratio between image's diagonal
-    length and marker's diagonal length.
+    with coordinates of its corner points.
     """
 
     def __init__(self, decoder_id: str, verbose=False):
@@ -182,14 +182,12 @@ class MarkerModule(NavModule):
 
     # Abstract interface
 
-    def run(self, img: Image) -> Tuple[str, List, float]:
+    def run(self, img: Image) -> Tuple[str, List]:
         decoded, pts = self.decoder.decode(img)
-        ratio = self.decoder.ratio(img, pts)
 
         self.log(f'Decoded: {decoded}')
-        self.log(f'Ratio: {ratio}')
 
-        return decoded, pts, ratio
+        return decoded, pts
 
 
 # - Deep Learning
@@ -307,8 +305,15 @@ class DeepVanishingModule(VanishingModule):
             verbose=False
         )
 
-        # Define middle cell
+        # Define middle cell and length of grid side
         self.middle = math.floor(grid_size / 2)
+        self.side = math.sqrt(grid_size)
+
+        # Define left and right cells
+        bounds = [-self.side, 0, self.side]
+
+        self.left = [sum(x) for x in zip([self.middle + 1] * 3, bounds)]
+        self.right = [sum(x) for x in zip([self.middle - 1] * 3, bounds)]
 
     # Abstract interface
 
@@ -320,9 +325,9 @@ class DeepVanishingModule(VanishingModule):
         # Get alignment
         alignment = 'center'
 
-        if cell == self.middle + 1:
+        if cell in self.left:
             alignment = 'left'
-        elif cell == self.middle - 1:
+        elif cell in self.right:
             alignment = 'right'
 
         self.log(f'Alignment: {alignment}')
@@ -332,11 +337,11 @@ class DeepVanishingModule(VanishingModule):
 
 class DepthModule(NavModule):
     """
-    Module that infers depth map associated to an image and compute distance to
-    element in front of the drone.
+    Module that infers depth map associated to an image and compute mean depth
+    of different areas in the image.
     """
 
-    def __init__(self, verbose=False):
+    def __init__(self, n: int = 3, verbose=False):
         super().__init__(verbose)
 
         # Deep module
@@ -347,10 +352,8 @@ class DepthModule(NavModule):
             verbose=False
         )
 
-        # Factor to convert depth into distance (normally, it depends on camera
-        # parameters, but since I don't known these parameters, I try values
-        # and found this one)
-        self.factor = 3000
+        # Grid size
+        self.n = n
 
     # Abstract interface
 
@@ -361,25 +364,48 @@ class DepthModule(NavModule):
         # Dimensions
         h, w = depth.shape
 
-        # Crop the image to keep center box
-        mx, my = w // 2, h // 2
-        dx, dy = w // 10, h // 10
+        # Split the image in cells and compute mean depth of each
+        cell = (w // self.n, h // self.n)
+        means = []
 
-        cropped = depth[(my - dy):(my + dy), (mx - dx):(mx + dx)]
+        for (j, i) in product(range(self.n), range(self.n)):
+            left = i * cell[0]
+            right = (i + 1) * cell[0]
+            bottom = j * cell[1]
+            top = (j + 1) * cell[1]
 
-        # Compute distance
-        distance = self.factor / np.mean(cropped)
+            cropped = depth[bottom:top, left:right]
 
-        self.log(f'Distance: {distance}')
+            means.append(np.mean(cropped))
 
-        return distance
+        self.log(f'Mean depths: {means}')
+
+        return means
 
 
 # - Staircase
 
-class StaircaseModule(NavModule):
+class StaircaseNaiveModule(NavModule):
     """
-    Module that moves the drone in a staircase (up or down) based on an image.
+    Module that moves the drone in a staircase (up or down).
+    """
+
+    def __init__(self, controller: Controller, verbose=False):
+        super().__init__(verbose)
+
+        self.controller = controller
+
+    # Abstract interface
+
+    def run(self, img: Image, direction: str):
+        self.controller.move(direction, 30)
+        self.controller.move('forward', 30)
+
+
+class StaircaseDepthModule(NavModule):
+    """
+    Module that moves the drone in a staircase (up or down) based on relative
+    depth map estimation.
     """
 
     def __init__(self, controller: Controller, verbose=False):
@@ -388,35 +414,88 @@ class StaircaseModule(NavModule):
         self.controller = controller
 
         # Depth module
-        self.depth = DepthModule(verbose=False)
+        self.depth = DepthModule(n=3, verbose=False)
 
-        # Threshold and limit on distance
-        self.threshold = 1
-        self.limit = 2
-
-        # Define staircase actions
-        self.sactions = {
-            'up': partial(self.controller.move, 'up', 30),
-            'down': partial(self.controller.move, 'down', 30),
-            'forward': partial(self.controller.move, 'forward', 30)
-        }
+        # Threshold
+        self.threshold = 200
 
     # Abstract interface
 
     def run(self, img: Image, direction: str):
         while True:
-            # Get distance to staircase
-            distance = self.depth.run(img=img)
+            # Get mean depth estimations
+            means = self.depth.run(img=img)
 
-            self.log(f'Distance: {distance}')
+            # Compute depth of each zone
+            means = np.array(means)
 
-            # Check limit
-            if distance > self.limit:
+            top = np.mean(means[0:3])
+            center = np.mean(means[3:6])
+            bottom = np.mean(means[6:9])
+
+            # Move the drone
+            self.controller.move(direction, 30)
+
+            if top + self.threshold > center >= bottom:
+                self.controller.move(direction, 30)
+            else:
                 break
 
-            # Move the drone, according to distance
-            action = direction if distance < self.threshold else 'forward'
-            self.sactions.get(action)()
+            # Take a new picture
+            img = self.controller.picture()
+
+
+class StaircaseMarkerModule(NavModule):
+    """
+    Module that moves the drone in a staircase (up or down) based on marker
+    detection.
+    """
+
+    def __init__(self, controller: Controller, verbose=False):
+        super().__init__(verbose)
+
+        self.controller = controller
+
+        # Marker module
+        self.marker = MarkerModule(decoder_id='aruco_opencv', verbose=True)
+
+        # (Known) width of the marker
+        self.width = 10
+
+        # Focal length
+        self.f = 1540
+
+    # Abstract interface
+
+    def run(self, img: Image, direction: str):
+        while True:
+            # Decode marker, if any
+            decoded, pts = self.marker.run(img=img)
+
+            # If no marker is detected, stop
+            if decoded is None:
+                break
+
+            # Perceived width
+            p = pts[2][0] - pts[3][0]
+
+            # Distance to marker
+            d = (self.width * self.f) / p
+
+            # Position of the middle points
+            h, _, _ = img.shape
+
+            mid_image = h // 2
+            mid_marker = np.mean([pts[0][1], pts[2][1]])
+
+            # Move the drone
+            threshold = h // 10
+            limits = [mid_image - threshold, mid_image + threshold]
+
+            if mid_marker > limits[0] and mid_marker < limits[1]:
+                self.controller.move('forward', max(0, d - 30))
+
+            self.controller.move(direction, 30)
 
             # Take a new picture
             img = self.controller.picture()
@@ -474,7 +553,7 @@ class NavAlgorithm(ABC):
             verbose=True
         )
 
-        self.staircase = StaircaseModule(
+        self.staircase = StaircaseNaiveModule(
             controller=self.controller,
             verbose=True
         )
@@ -553,16 +632,19 @@ class NavAlgorithm(ABC):
         while not self.env.has_reached_obj():
             img = self.controller.picture()
 
-            # Align drone using vanishing point
-            self.vanishing.run(img=img)
-
             # Check if drone has reach a key point
+            #
+            # To add the '+ Env' verification:
+            # [...] and self.env.nearest_keypoint(self._keypoints) < 2:
             if self._is_keypoint(img):
                 action, pos = self._keypoints[self._keypoints_idx]
                 self._keypoints_idx += 1
 
                 self._env_update(pos)
             else:
+                # Align drone using vanishing point
+                self.vanishing.run(img=img)
+
                 action = 'forward'
 
             # Execute action
@@ -690,7 +772,7 @@ class VisionAlgorithm(NavAlgorithm):
         )
 
         # Threshold of confidence
-        self.threshold = 0.85
+        self.threshold = 0.5
 
     # Abstract interface
 
@@ -712,15 +794,30 @@ class MarkerAlgorithm(NavAlgorithm):
         # Marker module
         self.marker = MarkerModule(decoder_id='aruco_opencv', verbose=True)
 
-        # Threshold on ratio
-        self.threshold = 0.15
+        # Focal length of the camera (to adapt according to the camera!)
+        self.f = 1540
+
+        # (Known) width of the marker used (in cm)
+        self.width = 10
+
+        # Threshold on distance (in cm)
+        self.threshold = 100
 
     # Abstract interface
 
     def _is_keypoint(self, img):
-        decoded, pts, ratio = self.marker.run(img=img)
+        decoded, pts = self.marker.run(img=img)
 
-        return decoded == '1' and ratio > self.threshold
+        if decoded == '1':
+            # Perceived width
+            p = pts[2][0] - pts[3][0]
+
+            # Distance to marker
+            d = (self.width * self.f) / p
+
+            return d <= self.threshold
+
+        return False
 
 
 class DepthAlgorithm(NavAlgorithm):
@@ -732,15 +829,86 @@ class DepthAlgorithm(NavAlgorithm):
     def __init__(self, env, controller, show=False):
         super().__init__(env, controller, show)
 
-        # Depth module
-        self.depth = DepthModule(verbose=True)
+        # Grid size
+        n = 3
 
-        # Threshold on distance
-        self.threshold = 1
+        # Depth module
+        self.depth = DepthModule(n=n, verbose=True)
+
+        # Middle cell
+        self.middle = math.floor((n ** 2) / 2)
+
+        # Threshold
+        self.threshold = 500
 
     # Abstract interface
 
     def _is_keypoint(self, img):
-        distance = self.depth.run(img=img)
+        means = self.depth.run(img=img)
+        keypoint = False
 
-        return distance < self.threshold
+        for idx, value in enumerate(means):
+            if idx == self.middle:
+                pass
+            else:
+                if means[self.middle] - value < self.threshold:
+                    keypoint = True
+
+        return keypoint
+
+
+class VisionDepthAlgorithm(NavAlgorithm):
+    """
+    Navigation algorithm that uses vision of the drone and depth estimation to
+    determine if drone has reached a key point or not.
+    """
+
+    def __init__(self, env, controller, show=False):
+        super().__init__(env, controller, show)
+
+        # Vision algorithm
+        self.vision = VisionAlgorithm(env, controller, show)
+
+        # Depth algorithm
+        self.depth = DepthAlgorithm(env, controller, show)
+
+    # Abstract interface
+
+    def _is_keypoint(self, img):
+        return self.vision._is_keypoint(img) and self.depth._is_keypoint(img)
+
+
+class VisionMarkerAlgorithm(NavAlgorithm):
+    """
+    Navigation algorithm that uses vision of the drone and marker detection to
+    determine if drone has reached a key point or not.
+    """
+
+    def __init__(self, env, controller, show=False):
+        super().__init__(env, controller, show)
+
+        # Deep module
+        self.deep = DeepModule(
+            n_channels=2,
+            model_id='densenet161',
+            weights_pth='densenet161.pth',
+            verbose=True
+        )
+
+        # Threshold of confidence
+        self.threshold = 0.8
+
+        # Marker algorithm
+        self.marker = MarkerAlgorithm(env, controller, show)
+
+    # Abstract interface
+
+    def _is_keypoint(self, img):
+        pred = self.deep.run(img=img)
+
+        if pred[1] >= self.threshold:
+            return True
+        elif pred[1] > 0.5 and pred[1] < self.threshold:
+            return self.marker._is_keypoint(img)
+
+        return False
