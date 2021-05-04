@@ -278,32 +278,13 @@ class VPEdgelets(VPDetector):
 
         # Edges
         gray = color.rgb2gray(img)
-        median = np.median(gray)
-        sigma = 0.33
-
-        lo_thresh = int(max(0, (1.0 - sigma) * median))
-        hi_thresh = int(min(255, (1.0 + sigma) * median))
-
-        edges = feature.canny(
-            image=gray,
-            low_threshold=lo_thresh,
-            high_threshold=hi_thresh
-        )
+        edges = feature.canny(gray, sigma=0.3)
 
         # Lines
-        _, w, _ = img.shape
-
-        theta = np.pi / 180
-        thresh = 10
-        min_line_length = w // 40
-        max_line_gap = w // 256
-
         lines = transform.probabilistic_hough_line(
-            image=edges,
-            threshold=10,
-            line_length=min_line_length,
-            line_gap=max_line_gap,
-            theta=np.array([theta])
+            edges,
+            line_length=3,
+            line_gap=2
         )
 
         locations, directions, strengths = [], [], []
