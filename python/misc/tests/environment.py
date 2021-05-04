@@ -44,6 +44,11 @@ def main(
     print('Key points')
     print(keypoints)
 
+    # Nearest key point
+    nearest = env.nearest_keypoint(keypoints)
+
+    print(f'Number of steps until nearest key point: {nearest}')
+
     # Group sequence of action
     grouped = env.group_seq(sequence)
 

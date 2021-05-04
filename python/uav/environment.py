@@ -527,6 +527,33 @@ class Environment:
 
         return keypoints
 
+    def nearest_keypoint(self, keypoints: List[Keypoint]) -> int:
+        """
+        Get the number of steps between the position of the agent and the
+        nearest key point.
+        """
+
+        # If there is no key point
+        if len(keypoints) == 0:
+            return -1
+
+        # Get coordinates of each key point
+        coordinates = [keypoint[1] for keypoint in keypoints]
+
+        # Find nearest key point
+        idx, min_d = -1, math.inf
+
+        for i, coordinate in enumerate(coordinates):
+            d = math.dist(self.pos, coordinate)
+
+            if d < min_d:
+                min_d, idx = d, i
+
+        # Get number of step between agent and nearest key point
+        path = self.path(start=self.pos, end=coordinates[idx])
+
+        return len(path)
+
     # Objective
 
     def has_reached_obj(self) -> bool:
