@@ -1,20 +1,20 @@
-# Autonomous navigation of a UAV in an indoor environment
+# Autonomous navigation of a drone in indoor environments
 
-This work was a research and development project on autonomous navigation algorithms for a small programmable UAV (a Tello EDU) in an indoor environment free of dynamic obstacles. The hypothesis that the UAV has access to a simple representation of its environment, in order to plan paths and analyze them, was posed.
+This work is a research and development project on autonomous navigation algorithms for a small programmable drone in indoor environments free of dynamic obstacles. The hypothesis that the drone has access to a simple representation of its environment, in order to plan paths and analyze them, was posed.
 
 ## Context
 
-This work was carried out in the framework of my master thesis conducted for obtaining the Master's degree in Computer Engineering (academic year 2020-2021, [University of Liège](https://uliege.be/), [Faculty of Applied Science](https://facsa.uliege.be/)).
+Master's thesis carried out to obtain the degree of Master of Science in Computer Science Engineering ([University of Liège](https://uliege.be/), [Faculty of Applied Science](https://facsa.uliege.be/), academic year 2020-2021).
 
 ## Main objective
 
-The main objective of this work was to explore and test modern techniques allowing the autonomous navigation of a UAV in an indoor environment.
+The main objective of this work was to explore and test modern techniques allowing the autonomous navigation of a drone in an indoor environment.
 
 The main techniques explored are:
 
-* the calculation of vanishing point to adjust the UAV;
+* the calculation of vanishing point to adjust the drone;
 * the use of neural networks for various tasks (associating an action to an image, computing vanishing point, depth estimation);
-* the use of markers (ArUco, QR code) to guide the UAV.
+* the use of markers (ArUco, QR code) to guide the drone.
 
 Tests were first performed on a simulator ([Unreal Engine 4](https://www.unrealengine.com/) with the [AirSim](https://microsoft.github.io/AirSim/) plugin) and then in the corridors of a building with a [DJI Tello EDU](https://www.ryzerobotics.com/tello-edu).
 
@@ -41,7 +41,7 @@ The main implementation of the algorithms is located in the [`python/`](python/)
 * [`plots/`](python/plots/) is a module containing settings to create LaTeX plots with `matplotlib` package;
 * [`uav/`](python/uav/) is the main module that contains implementation of the controllers, environnement representation and all navigation modules and algorithms.
 
-Files [`learn.py`](python/learn.py) and [`navigate.py`](python/navigate.py) are main files used to, respectively, train and evaluate a neural network and navigate the UAV.
+Files [`learn.py`](python/learn.py) and [`navigate.py`](python/navigate.py) are main files used to, respectively, train and evaluate a neural network and navigate the drone.
 
 ## Results
 
@@ -55,7 +55,7 @@ First, make sure to create and activate the Anaconda environment using
 
 ```bash
 conda env create -f environment.yml
-conda activate autonomous-uav
+conda activate autonomous-drone
 ```
 
 Then, you can simply run the [`navigate.py`](python/navigate.py) script using, for example,

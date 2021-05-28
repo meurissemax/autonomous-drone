@@ -1,4 +1,4 @@
-name: autonomous-uav
+name: autonomous-drone
 channels:
   - pytorch
   - conda-forge
